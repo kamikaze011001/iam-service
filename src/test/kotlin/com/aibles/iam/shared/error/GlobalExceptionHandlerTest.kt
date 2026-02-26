@@ -1,7 +1,13 @@
 package com.aibles.iam.shared.error
 
+import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
+import com.aibles.iam.identity.usecase.CreateUserUseCase
+import com.aibles.iam.identity.usecase.DeleteUserUseCase
+import com.aibles.iam.identity.usecase.GetUserUseCase
+import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.ninjasquad.springmockk.MockkBean
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -23,11 +29,13 @@ import jakarta.validation.constraints.NotBlank
 @org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc(addFilters = false)
 class GlobalExceptionHandlerTest {
 
-    @Autowired
-    lateinit var mockMvc: MockMvc
-
-    @Autowired
-    lateinit var objectMapper: ObjectMapper
+    @Autowired lateinit var mockMvc: MockMvc
+    @Autowired lateinit var objectMapper: ObjectMapper
+    @MockkBean lateinit var getUserUseCase: GetUserUseCase
+    @MockkBean lateinit var updateUserUseCase: UpdateUserUseCase
+    @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
+    @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
+    @MockkBean lateinit var createUserUseCase: CreateUserUseCase
 
     @RestController
     class TestController {
