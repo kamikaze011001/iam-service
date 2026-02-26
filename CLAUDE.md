@@ -345,6 +345,11 @@ git pull origin main
 - ALWAYS use `Closes #<N>` in the PR body to auto-close the GitHub issue
 - ALWAYS delete the branch after merge (`--delete-branch`)
 
+> ⚠️ **BRANCH PROTECTION — `main` is a protected branch:**
+> - `git push origin main` will be **rejected**
+> - ALL changes to `main` MUST go through a PR — no exceptions
+> - This applies to every commit, including chores, fixes, and docs updates
+
 ### Running Locally
 
 ```bash
