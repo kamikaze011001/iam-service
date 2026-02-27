@@ -42,3 +42,9 @@ webauthn:
   rp-id: ${WEBAUTHN_RP_ID:localhost}
   rp-origin: ${WEBAUTHN_RP_ORIGIN:http://localhost:8080}
   rp-name: ${WEBAUTHN_RP_NAME:IAM Service}
+oauth2:
+  clients:
+    iam-web:
+      redirect-uri: ${IAM_WEB_REDIRECT_URI:http://localhost:3000/callback}
+    iam-service:
+      client-secret: "${IAM_SERVICE_CLIENT_SECRET:{noop}changeme}"
