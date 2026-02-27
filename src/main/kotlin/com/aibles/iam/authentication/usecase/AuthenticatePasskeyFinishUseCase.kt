@@ -10,7 +10,10 @@ import com.aibles.iam.shared.error.ForbiddenException
 import com.aibles.iam.shared.error.NotFoundException
 import com.aibles.iam.shared.error.UnauthorizedException
 import com.webauthn4j.WebAuthnManager
-import com.webauthn4j.authenticator.AuthenticatorImpl
+import com.webauthn4j.credential.CredentialRecordImpl
+import com.webauthn4j.data.attestation.statement.NoneAttestationStatement
+import com.webauthn4j.data.extension.authenticator.AuthenticationExtensionsAuthenticatorOutputs
+import com.webauthn4j.data.extension.authenticator.RegistrationExtensionAuthenticatorOutput
 import com.webauthn4j.converter.util.ObjectConverter
 import com.webauthn4j.data.AuthenticationParameters
 import com.webauthn4j.data.AuthenticationRequest
@@ -23,7 +26,6 @@ import com.webauthn4j.verifier.exception.MaliciousCounterValueException
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.Base64
-import java.util.UUID
 
 @Component
 class AuthenticatePasskeyFinishUseCase(
@@ -64,7 +66,18 @@ class AuthenticatePasskeyFinishUseCase(
         )!!
         val aaguid = credential.aaguid?.let { AAGUID(it) } ?: AAGUID.ZERO
         val attestedCredentialData = AttestedCredentialData(aaguid, credential.credentialId, coseKey)
-        val authenticator = AuthenticatorImpl(attestedCredentialData, null, credential.signCounter)
+        val credentialRecord = CredentialRecordImpl(
+            NoneAttestationStatement(),  // attestationStatement — not stored post-registration
+            null,                        // uvInitialized — unknown from stored credential
+            null,                        // backupEligible — unknown from stored credential
+            null,                        // backupState — unknown from stored credential
+            credential.signCounter,
+            attestedCredentialData,
+            AuthenticationExtensionsAuthenticatorOutputs<RegistrationExtensionAuthenticatorOutput>(),
+            null,                        // collectedClientData — not available at auth time
+            null,                        // clientExtensions
+            null,                        // authenticatorTransports
+        )
 
         // Step 4: build authentication request + parameters
         val authRequest = AuthenticationRequest(
@@ -80,14 +93,14 @@ class AuthenticatePasskeyFinishUseCase(
             DefaultChallenge(challenge),
             null,
         )
-        val authParameters = AuthenticationParameters(serverProperty, authenticator, false, true)
+        val authParameters = AuthenticationParameters(serverProperty, credentialRecord, null, false, true)
 
         // Step 5: verify assertion
         val authData = try {
             webAuthnManager.verify(authRequest, authParameters)
-        } catch (e: MaliciousCounterValueException) {
+        } catch (_: MaliciousCounterValueException) {
             throw UnauthorizedException("Counter replay detected", ErrorCode.PASSKEY_COUNTER_INVALID)
-        } catch (e: RuntimeException) {
+        } catch (_: RuntimeException) {
             throw UnauthorizedException("Passkey assertion verification failed", ErrorCode.TOKEN_INVALID)
         }
 
