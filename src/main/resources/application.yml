@@ -38,3 +38,7 @@ jwt:
   private-key: ${JWT_PRIVATE_KEY:}
   public-key: ${JWT_PUBLIC_KEY:}
   access-token-ttl-minutes: ${JWT_TTL_MINUTES:15}
+webauthn:
+  rp-id: ${WEBAUTHN_RP_ID:localhost}
+  rp-origin: ${WEBAUTHN_RP_ORIGIN:http://localhost:8080}
+  rp-name: ${WEBAUTHN_RP_NAME:IAM Service}
