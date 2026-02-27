@@ -16,36 +16,19 @@ import org.springframework.security.oauth2.jwt.JwsHeader
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.stereotype.Component
-import java.security.KeyFactory
-import java.security.interfaces.RSAPrivateKey
-import java.security.interfaces.RSAPublicKey
-import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Base64
 import java.util.UUID
 
 @Component
-class JwtService(private val props: JwtProperties) {
+class JwtService(private val rsaKey: RSAKey, private val props: JwtProperties) {
 
     private val encoder: NimbusJwtEncoder
     private val decoder: NimbusJwtDecoder
 
     init {
-        require(props.privateKey.isNotBlank()) { "jwt.private-key must be configured" }
-        require(props.publicKey.isNotBlank()) { "jwt.public-key must be configured" }
-        val kf = KeyFactory.getInstance("RSA")
-        val privateKey = kf.generatePrivate(
-            PKCS8EncodedKeySpec(Base64.getDecoder().decode(props.privateKey))
-        ) as RSAPrivateKey
-        val publicKey = kf.generatePublic(
-            X509EncodedKeySpec(Base64.getDecoder().decode(props.publicKey))
-        ) as RSAPublicKey
-
-        val rsaKey = RSAKey.Builder(publicKey).privateKey(privateKey).build()
         encoder = NimbusJwtEncoder(ImmutableJWKSet(JWKSet(rsaKey)))
-        decoder = NimbusJwtDecoder.withPublicKey(publicKey).build()
+        decoder = NimbusJwtDecoder.withPublicKey(rsaKey.toRSAPublicKey()).build()
     }
 
     fun generateAccessToken(userId: UUID, email: String, roles: Set<String>): String {

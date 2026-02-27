@@ -6,14 +6,16 @@ import com.aibles.iam.shared.error.UnauthorizedException
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.crypto.RSASSASigner
+import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.security.KeyPairGenerator
+import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.RSAPublicKey
 import java.time.Instant
-import java.util.Base64
 import java.util.Date
 import java.util.UUID
 
@@ -22,12 +24,17 @@ class JwtServiceTest {
     private val keyPair = KeyPairGenerator.getInstance("RSA")
         .apply { initialize(2048) }.generateKeyPair()
 
+    private val rsaKey = RSAKey.Builder(keyPair.public as RSAPublicKey)
+        .privateKey(keyPair.private as RSAPrivateKey)
+        .keyID("test-rsa")
+        .build()
+
     private val props = JwtProperties(
-        privateKey = Base64.getEncoder().encodeToString(keyPair.private.encoded),
-        publicKey = Base64.getEncoder().encodeToString(keyPair.public.encoded),
+        privateKey = "",
+        publicKey = "",
         accessTokenTtlMinutes = 15,
     )
-    private val service = JwtService(props)
+    private val service = JwtService(rsaKey, props)
 
     @Test
     fun `generated token contains correct claims`() {
