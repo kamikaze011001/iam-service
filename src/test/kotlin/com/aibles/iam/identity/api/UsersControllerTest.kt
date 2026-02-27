@@ -1,6 +1,12 @@
 package com.aibles.iam.identity.api
 
 import com.aibles.iam.identity.domain.user.User
+import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
+import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
+import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
+import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
+import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
+import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -41,6 +47,14 @@ class UsersControllerTest {
     // AuthController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
     @MockkBean lateinit var revokeTokenUseCase: RevokeTokenUseCase
+
+    // PasskeyController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var registerPasskeyStartUseCase: RegisterPasskeyStartUseCase
+    @MockkBean lateinit var registerPasskeyFinishUseCase: RegisterPasskeyFinishUseCase
+    @MockkBean lateinit var authenticatePasskeyStartUseCase: AuthenticatePasskeyStartUseCase
+    @MockkBean lateinit var authenticatePasskeyFinishUseCase: AuthenticatePasskeyFinishUseCase
+    @MockkBean lateinit var deletePasskeyUseCase: DeletePasskeyUseCase
+    @MockkBean lateinit var passkeyCredentialRepository: PasskeyCredentialRepository
 
     private val testUser = User.create("test@example.com", "Test User")
 

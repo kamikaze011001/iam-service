@@ -1,5 +1,11 @@
 package com.aibles.iam.authentication.api
 
+import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
+import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
+import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
+import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
+import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
+import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -40,6 +46,14 @@ class AuthControllerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+
+    // PasskeyController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var registerPasskeyStartUseCase: RegisterPasskeyStartUseCase
+    @MockkBean lateinit var registerPasskeyFinishUseCase: RegisterPasskeyFinishUseCase
+    @MockkBean lateinit var authenticatePasskeyStartUseCase: AuthenticatePasskeyStartUseCase
+    @MockkBean lateinit var authenticatePasskeyFinishUseCase: AuthenticatePasskeyFinishUseCase
+    @MockkBean lateinit var deletePasskeyUseCase: DeletePasskeyUseCase
+    @MockkBean lateinit var passkeyCredentialRepository: PasskeyCredentialRepository
 
     @Test
     fun `POST refresh returns 200 with new token pair`() {
