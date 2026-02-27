@@ -19,6 +19,12 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.testcontainers:testcontainers-bom:2.0.3")
+    }
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
