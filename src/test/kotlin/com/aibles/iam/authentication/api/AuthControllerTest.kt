@@ -1,6 +1,5 @@
 package com.aibles.iam.authentication.api
 
-import com.aibles.iam.authorization.usecase.IssueTokenUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -14,6 +13,7 @@ import com.aibles.iam.shared.error.UnauthorizedException
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.justRun
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -44,7 +44,7 @@ class AuthControllerTest {
     @Test
     fun `POST refresh returns 200 with new token pair`() {
         every { refreshTokenUseCase.execute(any()) } returns
-            IssueTokenUseCase.Result("new-access", "new-refresh", 900)
+            RefreshTokenUseCase.Result("new-access", "new-refresh", 900)
 
         mockMvc.post("/api/v1/auth/refresh") {
             contentType = MediaType.APPLICATION_JSON
@@ -83,5 +83,7 @@ class AuthControllerTest {
         }.andExpect {
             status { isNoContent() }
         }
+
+        verify(exactly = 1) { revokeTokenUseCase.execute(RevokeTokenUseCase.Command("some-token")) }
     }
 }

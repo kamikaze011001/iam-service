@@ -13,12 +13,14 @@ class RefreshTokenUseCase(
     private val issueTokenUseCase: IssueTokenUseCase,
 ) {
     data class Command(val refreshToken: String)
+    data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long)
 
-    fun execute(command: Command): IssueTokenUseCase.Result {
+    fun execute(command: Command): Result {
         val userId = tokenStore.validateAndConsume(command.refreshToken)
         val user = getUserUseCase.execute(GetUserUseCase.Query(userId))
         if (!user.isActive())
             throw ForbiddenException("Account is disabled", ErrorCode.USER_DISABLED)
-        return issueTokenUseCase.execute(IssueTokenUseCase.Command(user))
+        val tokens = issueTokenUseCase.execute(IssueTokenUseCase.Command(user))
+        return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
     }
 }
