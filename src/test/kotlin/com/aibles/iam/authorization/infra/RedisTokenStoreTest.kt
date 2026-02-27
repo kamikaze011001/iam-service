@@ -1,5 +1,6 @@
 package com.aibles.iam.authorization.infra
 
+import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.UnauthorizedException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -54,9 +55,10 @@ class RedisTokenStoreTest {
 
         store.validateAndConsume(token)  // first: success
 
-        assertThrows<UnauthorizedException> {
+        val ex = assertThrows<UnauthorizedException> {
             store.validateAndConsume(token)  // second: must fail
         }
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
     }
 
     @Test
@@ -67,9 +69,10 @@ class RedisTokenStoreTest {
 
         Thread.sleep(500)  // wait beyond TTL
 
-        assertThrows<UnauthorizedException> {
+        val ex = assertThrows<UnauthorizedException> {
             store.validateAndConsume(token)
         }
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
     }
 
     @Test
@@ -82,7 +85,9 @@ class RedisTokenStoreTest {
 
         store.revokeAllForUser(userId)
 
-        assertThrows<UnauthorizedException> { store.validateAndConsume(t1) }
-        assertThrows<UnauthorizedException> { store.validateAndConsume(t2) }
+        val ex1 = assertThrows<UnauthorizedException> { store.validateAndConsume(t1) }
+        assertThat(ex1.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
+        val ex2 = assertThrows<UnauthorizedException> { store.validateAndConsume(t2) }
+        assertThat(ex2.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
     }
 }
