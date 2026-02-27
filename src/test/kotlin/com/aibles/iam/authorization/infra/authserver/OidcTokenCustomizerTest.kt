@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext
 
 class OidcTokenCustomizerTest {
@@ -17,13 +18,13 @@ class OidcTokenCustomizerTest {
     private val customizer = OidcTokenCustomizer(userRepository)
 
     private val googleSub = "google-sub-123"
-    private val testUser = User.create("user@example.com", "Test User")
+    private val testUser = User.create("user@example.com", "Test User", googleSub = googleSub)
 
     private fun buildContext(tokenTypeName: String, principalName: String): JwtEncodingContext {
         val authentication = mockk<Authentication>()
         every { authentication.name } returns principalName
 
-        val claimsBuilder = mockk<org.springframework.security.oauth2.jwt.JwtClaimsSet.Builder>(relaxed = true)
+        val claimsBuilder = mockk<JwtClaimsSet.Builder>(relaxed = true)
         every { claimsBuilder.claim(any(), any<Any>()) } returns claimsBuilder
 
         return mockk<JwtEncodingContext> {
@@ -61,5 +62,6 @@ class OidcTokenCustomizerTest {
         val ctx = buildContext(OidcParameterNames.ID_TOKEN, googleSub)
 
         customizer.customize(ctx)  // must not throw
+        verify(exactly = 0) { ctx.claims.claim(any(), any<Any>()) }
     }
 }

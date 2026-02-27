@@ -15,12 +15,15 @@ class OidcTokenCustomizer(
     override fun customize(context: JwtEncodingContext) {
         if (OidcParameterNames.ID_TOKEN != context.tokenType.value) return
 
+        // Principal name carries the Google sub claim when authenticated via Google OAuth2 (OidcUser).
+        // For future non-Google AS flows (e.g. Passkey), this lookup will return null and
+        // ID token enrichment will be silently skipped — revisit when non-Google AS flows are added.
         val googleSub = context.getPrincipal<Authentication>().name
         val user = userRepository.findByGoogleSub(googleSub) ?: return
 
         context.claims
             .claim("email", user.email)
-            .claim("name", user.displayName ?: user.email)
+            .claim("name", user.displayName ?: user.email)  // Override standard OIDC name claim with stored display name
             .claim("roles", user.roles.toList())
     }
 }
