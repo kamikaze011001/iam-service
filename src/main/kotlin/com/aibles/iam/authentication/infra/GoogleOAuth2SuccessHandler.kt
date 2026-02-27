@@ -23,8 +23,17 @@ class GoogleOAuth2SuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        val oidcUser = authentication.principal as OidcUser
-        val result = loginWithGoogleUseCase.execute(LoginWithGoogleUseCase.Command(oidcUser))
+        val principal = authentication.principal
+        if (principal !is OidcUser) {
+            response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            response.contentType = MediaType.APPLICATION_JSON_VALUE
+            objectMapper.writeValue(
+                response.writer,
+                ApiResponse.error("INTERNAL_ERROR", "Unexpected authentication principal type")
+            )
+            return
+        }
+        val result = loginWithGoogleUseCase.execute(LoginWithGoogleUseCase.Command(principal))
         val body = ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.status = HttpServletResponse.SC_OK
