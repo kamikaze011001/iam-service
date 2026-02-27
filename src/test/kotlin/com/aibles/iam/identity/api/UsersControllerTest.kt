@@ -1,6 +1,8 @@
 package com.aibles.iam.identity.api
 
 import com.aibles.iam.identity.domain.user.User
+import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
+import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.identity.usecase.DeleteUserUseCase
@@ -35,6 +37,10 @@ class UsersControllerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+
+    // AuthController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
+    @MockkBean lateinit var revokeTokenUseCase: RevokeTokenUseCase
 
     private val testUser = User.create("test@example.com", "Test User")
 
