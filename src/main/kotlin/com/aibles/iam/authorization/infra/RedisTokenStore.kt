@@ -14,6 +14,7 @@ class RedisTokenStore(private val template: StringRedisTemplate) : TokenStore {
     override fun storeRefreshToken(token: String, userId: UUID, ttl: Duration) {
         template.opsForValue().set("rt:$token", userId.toString(), ttl)
         template.opsForSet().add("rt:u:$userId", token)
+        template.expire("rt:u:$userId", ttl)
     }
 
     override fun validateAndConsume(token: String): UUID {
@@ -24,9 +25,7 @@ class RedisTokenStore(private val template: StringRedisTemplate) : TokenStore {
 
     override fun revokeAllForUser(userId: UUID) {
         val tokens = template.opsForSet().members("rt:u:$userId") ?: emptySet()
-        if (tokens.isNotEmpty()) {
-            tokens.forEach { token -> template.delete("rt:$token") }
-        }
+        tokens.forEach { token -> template.delete("rt:$token") }
         template.delete("rt:u:$userId")
     }
 }
