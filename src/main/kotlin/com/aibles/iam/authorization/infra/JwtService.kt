@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.security.oauth2.jwt.JwtException
+import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.JwsHeader
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
@@ -32,6 +33,8 @@ class JwtService(private val props: JwtProperties) {
     private val decoder: NimbusJwtDecoder
 
     init {
+        require(props.privateKey.isNotBlank()) { "jwt.private-key must be configured" }
+        require(props.publicKey.isNotBlank()) { "jwt.public-key must be configured" }
         val kf = KeyFactory.getInstance("RSA")
         val privateKey = kf.generatePrivate(
             PKCS8EncodedKeySpec(Base64.getDecoder().decode(props.privateKey))
@@ -62,6 +65,10 @@ class JwtService(private val props: JwtProperties) {
     fun validate(token: String): Jwt {
         try {
             return decoder.decode(token)
+        } catch (e: JwtValidationException) {
+            val code = if (e.errors.any { it.description.contains("expired", ignoreCase = true) })
+                ErrorCode.TOKEN_EXPIRED else ErrorCode.TOKEN_INVALID
+            throw UnauthorizedException(e.message ?: "Invalid token", code)
         } catch (e: JwtException) {
             throw UnauthorizedException(e.message ?: "Invalid token", ErrorCode.TOKEN_INVALID)
         }

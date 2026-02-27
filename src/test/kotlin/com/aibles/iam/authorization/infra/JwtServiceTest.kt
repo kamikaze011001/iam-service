@@ -1,6 +1,7 @@
 package com.aibles.iam.authorization.infra
 
 import com.aibles.iam.shared.config.JwtProperties
+import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.UnauthorizedException
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
@@ -41,7 +42,8 @@ class JwtServiceTest {
     fun `tampered token is rejected with UnauthorizedException`() {
         val token = service.generateAccessToken(UUID.randomUUID(), "a@b.com", setOf("USER"))
         val tampered = token.dropLast(5) + "XXXXX"
-        assertThrows<UnauthorizedException> { service.validate(tampered) }
+        val ex = assertThrows<UnauthorizedException> { service.validate(tampered) }
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
     }
 
     @Test
@@ -59,6 +61,7 @@ class JwtServiceTest {
         signedJWT.sign(RSASSASigner(keyPair.private))
         val expiredToken = signedJWT.serialize()
 
-        assertThrows<UnauthorizedException> { service.validate(expiredToken) }
+        val ex = assertThrows<UnauthorizedException> { service.validate(expiredToken) }
+        assertThat(ex.errorCode).isEqualTo(ErrorCode.TOKEN_EXPIRED)
     }
 }
