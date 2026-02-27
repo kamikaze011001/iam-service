@@ -29,7 +29,10 @@ class SecurityConfig(
                 auth
                     .requestMatchers(
                         "/oauth2/**", "/login/**",
-                        "/api/v1/auth/**",
+                        "/api/v1/auth/refresh",
+                        "/api/v1/auth/logout",
+                        "/api/v1/auth/passkey/authenticate/start",
+                        "/api/v1/auth/passkey/authenticate/finish",
                         "/actuator/**",
                         "/swagger-ui/**", "/v3/api-docs/**",
                     ).permitAll()
