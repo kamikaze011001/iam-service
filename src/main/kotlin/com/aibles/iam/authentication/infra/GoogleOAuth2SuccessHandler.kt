@@ -18,10 +18,9 @@ import org.springframework.stereotype.Component
 class GoogleOAuth2SuccessHandler(
     private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val objectMapper: ObjectMapper,
+    private val requestCache: HttpSessionRequestCache = HttpSessionRequestCache(),
+    private val savedRequestHandler: SavedRequestAwareAuthenticationSuccessHandler = SavedRequestAwareAuthenticationSuccessHandler(),
 ) : AuthenticationSuccessHandler {
-
-    private val requestCache = HttpSessionRequestCache()
-    private val savedRequestHandler = SavedRequestAwareAuthenticationSuccessHandler()
 
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,

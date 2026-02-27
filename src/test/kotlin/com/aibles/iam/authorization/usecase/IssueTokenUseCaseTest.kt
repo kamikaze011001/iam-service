@@ -4,23 +4,29 @@ import com.aibles.iam.authorization.domain.token.TokenStore
 import com.aibles.iam.authorization.infra.JwtService
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.shared.config.JwtProperties
+import com.nimbusds.jose.jwk.RSAKey
 import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.security.KeyPairGenerator
-import java.util.Base64
+import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.RSAPublicKey
 
 class IssueTokenUseCaseTest {
 
     private val keyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+    private val rsaKey = RSAKey.Builder(keyPair.public as RSAPublicKey)
+        .privateKey(keyPair.private as RSAPrivateKey)
+        .keyID("test-rsa")
+        .build()
     private val props = JwtProperties(
-        privateKey = Base64.getEncoder().encodeToString(keyPair.private.encoded),
-        publicKey = Base64.getEncoder().encodeToString(keyPair.public.encoded),
+        privateKey = "",
+        publicKey = "",
         accessTokenTtlMinutes = 15,
     )
-    private val jwtService = JwtService(props)
+    private val jwtService = JwtService(rsaKey, props)
     private val tokenStore = mockk<TokenStore>()
     private val useCase = IssueTokenUseCase(jwtService, tokenStore, props)
 

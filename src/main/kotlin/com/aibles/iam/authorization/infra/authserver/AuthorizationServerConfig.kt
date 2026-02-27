@@ -56,7 +56,7 @@ class AuthorizationServerConfig(private val jwtProperties: JwtProperties) {
     }
 
     @Bean
-    fun jwkSource(): JWKSource<SecurityContext> {
+    fun rsaKey(): RSAKey {
         val kf = KeyFactory.getInstance("RSA")
         val privateKey = kf.generatePrivate(
             PKCS8EncodedKeySpec(Base64.getDecoder().decode(jwtProperties.privateKey))
@@ -64,9 +64,12 @@ class AuthorizationServerConfig(private val jwtProperties: JwtProperties) {
         val publicKey = kf.generatePublic(
             X509EncodedKeySpec(Base64.getDecoder().decode(jwtProperties.publicKey))
         ) as RSAPublicKey
-        val rsaKey = RSAKey.Builder(publicKey).privateKey(privateKey).keyID("iam-rsa").build()
-        return ImmutableJWKSet(JWKSet(rsaKey))
+        return RSAKey.Builder(publicKey).privateKey(privateKey).keyID("iam-rsa").build()
     }
+
+    @Bean
+    fun jwkSource(rsaKey: RSAKey): JWKSource<SecurityContext> =
+        ImmutableJWKSet(JWKSet(rsaKey))
 
     @Bean
     fun jwtDecoder(jwkSource: JWKSource<SecurityContext>): JwtDecoder =
