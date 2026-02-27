@@ -51,7 +51,7 @@ class RegisterPasskeyFinishUseCase(
             DefaultChallenge(challenge),
             null,
         )
-        val registrationParameters = RegistrationParameters(serverProperty, false, true)
+        val registrationParameters = RegistrationParameters(serverProperty, null, false, true)
 
         // Step 4: verify — throws VerificationException subclasses on failure
         val data = try {
@@ -61,11 +61,11 @@ class RegisterPasskeyFinishUseCase(
         }
 
         // Step 5: extract credential data from verification result
-        val authData = data.attestationObject!!.authenticatorData!!
+        val authData = data.attestationObject!!.authenticatorData
         val credData = authData.attestedCredentialData!!
         val coseKeyBytes = objectConverter.cborConverter.writeValueAsBytes(credData.coseKey)
-        val aaguid: UUID? = credData.aaguid?.value?.let {
-            try { UUID.fromString(it.toString()) } catch (e: Exception) { null }
+        val aaguid: UUID? = credData.aaguid.value?.let {
+            try { UUID.fromString(it.toString()) } catch (_: Exception) { null }
         }
 
         // Step 6: save credential
