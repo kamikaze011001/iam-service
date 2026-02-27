@@ -34,3 +34,7 @@ management:
     web:
       exposure:
         include: health,info
+jwt:
+  private-key: ${JWT_PRIVATE_KEY:}
+  public-key: ${JWT_PUBLIC_KEY:}
+  access-token-ttl-minutes: ${JWT_TTL_MINUTES:15}
