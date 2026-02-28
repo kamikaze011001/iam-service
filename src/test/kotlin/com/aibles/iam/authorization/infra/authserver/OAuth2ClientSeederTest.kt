@@ -2,7 +2,6 @@ package com.aibles.iam.authorization.infra.authserver
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -32,6 +31,7 @@ class OAuth2ClientSeederTest {
 
         val saved = mutableListOf<RegisteredClient>()
         verify { repository.save(capture(saved)) }
+        assertThat(saved).hasSize(2)  // both iam-web and iam-service must be saved
 
         val iamWeb = saved.find { it.clientId == "iam-web" }
         assertThat(iamWeb).isNotNull()

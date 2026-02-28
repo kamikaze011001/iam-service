@@ -10,7 +10,6 @@ import org.springframework.security.oauth2.core.oidc.OidcScopes
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings
-import org.springframework.security.oauth2.server.authorization.settings.TokenSettings
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -52,7 +51,6 @@ class OAuth2ClientSeeder(
         .scope(OidcScopes.EMAIL)
         .scope(OidcScopes.PROFILE)
         .clientSettings(ClientSettings.builder().requireProofKey(true).build())
-        .tokenSettings(TokenSettings.builder().build())
         .build()
 
     private fun buildIamServiceClient() = RegisteredClient
@@ -64,7 +62,5 @@ class OAuth2ClientSeeder(
         .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
         .scope("iam:read")
         .scope("iam:write")
-        .clientSettings(ClientSettings.builder().build())
-        .tokenSettings(TokenSettings.builder().build())
         .build()
 }
