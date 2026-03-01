@@ -7,27 +7,24 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
 @ActiveProfiles("integration")
 abstract class BaseIntegrationTest {
 
     companion object {
-        @Container
         @JvmStatic
         val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
             .withDatabaseName("iam_test")
             .withUsername("test")
             .withPassword("test")
+            .apply { start() }
 
-        @Container
         @JvmStatic
         val redis: GenericContainer<*> = GenericContainer("redis:7-alpine")
             .withExposedPorts(6379)
+            .apply { start() }
 
         @DynamicPropertySource
         @JvmStatic
