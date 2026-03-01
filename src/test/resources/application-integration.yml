@@ -1,0 +1,32 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            scope: openid,email,profile
+jwt:
+  private-key: ""
+  public-key: ""
+  access-token-ttl-minutes: 15
+webauthn:
+  rp-id: localhost
+  rp-origin: http://localhost:8080
+  rp-name: IAM Service Test
+oauth2:
+  clients:
+    iam-web:
+      redirect-uri: http://localhost:3000/callback
+    iam-service:
+      client-secret: "{noop}test-secret"
+rate-limit:
+  enabled: false
