@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Auth", description = "Token refresh and logout")
 class AuthController(
     private val refreshTokenUseCase: RefreshTokenUseCase,
     private val revokeTokenUseCase: RevokeTokenUseCase,

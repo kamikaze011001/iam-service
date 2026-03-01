@@ -29,6 +29,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/auth/passkey")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Passkey", description = "WebAuthn passkey registration and authentication")
 class PasskeyController(
     private val registerPasskeyStartUseCase: RegisterPasskeyStartUseCase,
     private val registerPasskeyFinishUseCase: RegisterPasskeyFinishUseCase,
