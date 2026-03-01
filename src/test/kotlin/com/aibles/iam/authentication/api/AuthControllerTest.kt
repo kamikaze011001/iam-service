@@ -1,5 +1,7 @@
 package com.aibles.iam.authentication.api
 
+import com.aibles.iam.audit.usecase.QueryAuditLogsUseCase
+import com.aibles.iam.audit.usecase.RecordAuditEventUseCase
 import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
@@ -54,6 +56,10 @@ class AuthControllerTest {
     @MockkBean lateinit var authenticatePasskeyFinishUseCase: AuthenticatePasskeyFinishUseCase
     @MockkBean lateinit var deletePasskeyUseCase: DeletePasskeyUseCase
     @MockkBean lateinit var passkeyCredentialRepository: PasskeyCredentialRepository
+
+    // AuditLogsController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
+    @MockkBean lateinit var recordAuditEventUseCase: RecordAuditEventUseCase
 
     @Test
     fun `POST refresh returns 200 with new token pair`() {
