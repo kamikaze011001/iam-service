@@ -1,5 +1,6 @@
 package com.aibles.iam.shared.config
 
+import com.aibles.iam.authentication.infra.GoogleOAuth2FailureHandler
 import com.aibles.iam.authentication.infra.GoogleOAuth2SuccessHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -13,6 +14,7 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableWebSecurity
 class SecurityConfig(
     private val googleOAuth2SuccessHandler: GoogleOAuth2SuccessHandler,
+    private val googleOAuth2FailureHandler: GoogleOAuth2FailureHandler,
     private val jwtDecoder: JwtDecoder,
 ) {
 
@@ -34,7 +36,10 @@ class SecurityConfig(
                     ).permitAll()
                     .anyRequest().authenticated()
             }
-            .oauth2Login { it.successHandler(googleOAuth2SuccessHandler) }
+            .oauth2Login {
+                it.successHandler(googleOAuth2SuccessHandler)
+                it.failureHandler(googleOAuth2FailureHandler)
+            }
             .oauth2ResourceServer { it.jwt { jwt -> jwt.decoder(jwtDecoder) } }
         return http.build()
     }
