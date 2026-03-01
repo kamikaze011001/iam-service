@@ -20,6 +20,7 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey
 import com.webauthn4j.verifier.exception.MaliciousCounterValueException
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -107,5 +108,23 @@ class AuthenticatePasskeyFinishUseCaseTest {
 
         val ex = assertThrows<com.aibles.iam.shared.error.UnauthorizedException> { useCase.execute(command()) }
         assertThat(ex.errorCode).isEqualTo(ErrorCode.PASSKEY_COUNTER_INVALID)
+    }
+
+    @Test
+    fun `disabled user throws ForbiddenException without saving credential`() {
+        val mockAuthData = mockk<AuthenticationData>(relaxed = true)
+        every { mockAuthData.authenticatorData!!.signCount } returns 6L
+
+        every { credentialRepository.findByCredentialId(any()) } returns storedCredential
+        every { redisChallengeStore.getAndDeleteChallenge("sess") } returns ByteArray(32)
+        every { webAuthnManager.verify(any<AuthenticationRequest>(), any<AuthenticationParameters>()) } returns mockAuthData
+        // getUserUseCase returns a disabled user
+        val disabledUser = User.create("disabled@test.com").also { it.disable() }
+        every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns disabledUser
+
+        assertThrows<com.aibles.iam.shared.error.ForbiddenException> { useCase.execute(command()) }
+
+        // Credential must NOT have been saved
+        verify(exactly = 0) { credentialRepository.save(any()) }
     }
 }

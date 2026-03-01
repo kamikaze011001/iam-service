@@ -104,14 +104,16 @@ class AuthenticatePasskeyFinishUseCase(
             throw UnauthorizedException("Passkey assertion verification failed", ErrorCode.TOKEN_INVALID)
         }
 
-        // Step 6: update counter and last-used timestamp
+        // Step 6: load user and verify account is active BEFORE modifying any credential state
+        val user = getUserUseCase.execute(GetUserUseCase.Query(credential.userId))
+        if (!user.isActive()) throw ForbiddenException("Account is disabled", ErrorCode.USER_DISABLED)
+
+        // Step 7: update counter and last-used timestamp now that user is confirmed active
         credential.verifyAndIncrementCounter(authData.authenticatorData!!.signCount)
         credential.lastUsedAt = Instant.now()
         credentialRepository.save(credential)
 
-        // Step 7: load user, check active, issue tokens
-        val user = getUserUseCase.execute(GetUserUseCase.Query(credential.userId))
-        if (!user.isActive()) throw ForbiddenException("Account is disabled", ErrorCode.USER_DISABLED)
+        // Step 8: issue tokens
         val tokens = issueTokenUseCase.execute(IssueTokenUseCase.Command(user))
         return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
     }
