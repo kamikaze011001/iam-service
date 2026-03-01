@@ -20,11 +20,14 @@ class RevokeTokenUseCaseTest {
 
     @Test
     fun `valid token is consumed from store`() {
-        every { tokenStore.validateAndConsume("good-token") } returns UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        every { tokenStore.validateAndConsume("good-token") } returns userId
+        every { tokenStore.revokeAllForUser(userId) } returns Unit
 
         useCase.execute(RevokeTokenUseCase.Command("good-token"))
 
         verify(exactly = 1) { tokenStore.validateAndConsume("good-token") }
+        verify(exactly = 1) { tokenStore.revokeAllForUser(userId) }
         verify(exactly = 1) { eventPublisher.publishEvent(match<AuditDomainEvent> {
             it.eventType == AuditEvent.TOKEN_REVOKED
         }) }
@@ -37,5 +40,16 @@ class RevokeTokenUseCaseTest {
 
         // should NOT throw — logout is idempotent
         useCase.execute(RevokeTokenUseCase.Command("gone-token"))
+    }
+
+    @Test
+    fun `logout revokes all sessions for the user`() {
+        val userId = UUID.randomUUID()
+        every { tokenStore.validateAndConsume("token-1") } returns userId
+        every { tokenStore.revokeAllForUser(userId) } returns Unit
+
+        useCase.execute(RevokeTokenUseCase.Command("token-1"))
+
+        verify(exactly = 1) { tokenStore.revokeAllForUser(userId) }
     }
 }

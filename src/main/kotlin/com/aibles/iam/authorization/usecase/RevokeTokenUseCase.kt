@@ -17,6 +17,7 @@ class RevokeTokenUseCase(
     fun execute(command: Command) {
         try {
             val userId = tokenStore.validateAndConsume(command.refreshToken)
+            tokenStore.revokeAllForUser(userId)   // revoke all remaining sessions for this user
             eventPublisher.publishEvent(AuditDomainEvent(
                 eventType = AuditEvent.TOKEN_REVOKED,
                 userId = userId,
