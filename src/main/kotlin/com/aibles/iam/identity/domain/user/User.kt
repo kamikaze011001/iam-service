@@ -19,7 +19,7 @@ class User private constructor(
     @Id val id: UUID = UUID.randomUUID(),
     @Column(unique = true, nullable = false) val email: String,
     var displayName: String? = null,
-    @Column(unique = true) val googleSub: String? = null,
+    @Column(unique = true) var googleSub: String? = null,
     @Enumerated(EnumType.STRING) var status: UserStatus = UserStatus.ACTIVE,
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = [JoinColumn(name = "user_id")])
@@ -59,6 +59,11 @@ class User private constructor(
 
     fun recordLogin() {
         lastLoginAt = Instant.now()
+        updatedAt = Instant.now()
+    }
+
+    fun linkGoogleAccount(googleSub: String) {
+        this.googleSub = googleSub
         updatedAt = Instant.now()
     }
 
