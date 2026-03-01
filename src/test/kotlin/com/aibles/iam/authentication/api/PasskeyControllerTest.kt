@@ -1,5 +1,7 @@
 package com.aibles.iam.authentication.api
 
+import com.aibles.iam.audit.usecase.QueryAuditLogsUseCase
+import com.aibles.iam.audit.usecase.RecordAuditEventUseCase
 import com.aibles.iam.authentication.domain.passkey.PasskeyCredential
 import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
@@ -62,6 +64,10 @@ class PasskeyControllerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+
+    // AuditLogsController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
+    @MockkBean lateinit var recordAuditEventUseCase: RecordAuditEventUseCase
 
     private val userId = UUID.randomUUID()
 
