@@ -2,8 +2,10 @@ package com.aibles.iam.audit.usecase
 
 import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.audit.domain.log.AuditLogRepository
+import com.aibles.iam.audit.domain.log.AuditLogSpecs
 import com.aibles.iam.shared.pagination.PageResponse
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.UUID
@@ -32,13 +34,13 @@ class QueryAuditLogsUseCase(private val auditLogRepository: AuditLogRepository) 
     )
 
     fun execute(query: Query): PageResponse<AuditLogItem> {
-        val page = auditLogRepository.findFiltered(
+        val spec = AuditLogSpecs.filtered(
             eventType = query.eventType,
             userId = query.userId,
             from = query.from,
             to = query.to,
-            pageable = PageRequest.of(query.page, query.size),
         )
+        val page = auditLogRepository.findAll(spec, PageRequest.of(query.page, query.size, Sort.by(Sort.Direction.DESC, "createdAt")))
         return PageResponse(
             content = page.content.map { log ->
                 AuditLogItem(

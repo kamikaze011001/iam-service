@@ -8,7 +8,8 @@ import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
 import java.time.Instant
 import java.util.UUID
 
@@ -20,10 +21,10 @@ class QueryAuditLogsUseCaseTest {
     @Test
     fun `execute returns paginated audit logs`() {
         val log = AuditLog.create(eventType = AuditEvent.USER_CREATED, userId = UUID.randomUUID())
-        val page = PageImpl(listOf(log), PageRequest.of(0, 20), 1)
+        val page = PageImpl(listOf(log))
 
         every {
-            repo.findFiltered(null, null, null, null, PageRequest.of(0, 20))
+            repo.findAll(any<Specification<AuditLog>>(), any<Pageable>())
         } returns page
 
         val result = useCase.execute(
@@ -40,10 +41,10 @@ class QueryAuditLogsUseCaseTest {
         val userId = UUID.randomUUID()
         val from = Instant.parse("2026-01-01T00:00:00Z")
         val to = Instant.parse("2026-12-31T23:59:59Z")
-        val page = PageImpl(emptyList<AuditLog>(), PageRequest.of(0, 10), 0)
+        val page = PageImpl(emptyList<AuditLog>())
 
         every {
-            repo.findFiltered(AuditEvent.LOGIN_GOOGLE_SUCCESS, userId, from, to, PageRequest.of(0, 10))
+            repo.findAll(any<Specification<AuditLog>>(), any<Pageable>())
         } returns page
 
         val result = useCase.execute(
