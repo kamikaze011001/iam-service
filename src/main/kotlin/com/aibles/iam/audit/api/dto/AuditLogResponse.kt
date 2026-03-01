@@ -2,6 +2,7 @@ package com.aibles.iam.audit.api.dto
 
 import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.audit.usecase.QueryAuditLogsUseCase
+import com.fasterxml.jackson.annotation.JsonRawValue
 import java.time.Instant
 import java.util.UUID
 
@@ -12,7 +13,7 @@ data class AuditLogResponse(
     val actorId: UUID?,
     val ipAddress: String?,
     val userAgent: String?,
-    val metadata: String?,
+    @JsonRawValue val metadata: String?,
     val createdAt: Instant,
 ) {
     companion object {
