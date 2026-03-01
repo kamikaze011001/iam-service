@@ -11,6 +11,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import java.util.UUID
 
 class RecordAuditEventUseCaseTest {
@@ -57,5 +58,14 @@ class RecordAuditEventUseCaseTest {
         useCase.onAuditEvent(event)
 
         verify(exactly = 1) { repo.save(match { it.metadata == null }) }
+    }
+
+    @Test
+    fun `onAuditEvent swallows exception when save fails`() {
+        every { repo.save(any()) } throws RuntimeException("DB down")
+
+        val event = AuditDomainEvent(eventType = AuditEvent.USER_CREATED)
+
+        assertDoesNotThrow { useCase.onAuditEvent(event) }
     }
 }
