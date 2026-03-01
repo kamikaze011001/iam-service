@@ -44,6 +44,10 @@ class GoogleOAuth2SuccessHandler(
 
         // Ensure user exists in DB for both flows
         val result = loginWithGoogleUseCase.execute(LoginWithGoogleUseCase.Command(principal))
+
+        // Note: For first-time users, CreateUserUseCase (called inside LoginWithGoogleUseCase)
+        // also publishes USER_CREATED. So a first login produces two audit events:
+        // USER_CREATED + LOGIN_GOOGLE_SUCCESS. This is intentional — they are distinct operations.
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.LOGIN_GOOGLE_SUCCESS,
             userId = result.user.id,
