@@ -28,7 +28,10 @@ class PasskeyCredential(
     protected constructor() : this(userId = UUID.randomUUID(), credentialId = ByteArray(0), publicKeyCose = ByteArray(0))
 
     fun verifyAndIncrementCounter(newCounter: Long) {
-        if (newCounter <= signCounter)
+        // WebAuthn spec §6.1 step 21: if both counters are 0 the authenticator does not support
+        // counter-based replay detection — this is NOT an error. Apple Passkeys and Windows Hello
+        // both use signCount = 0 permanently.
+        if (newCounter != 0L && newCounter <= signCounter)
             throw UnauthorizedException("Counter replay detected", ErrorCode.PASSKEY_COUNTER_INVALID)
         signCounter = newCounter
     }
