@@ -90,4 +90,20 @@ class RedisTokenStoreTest {
         val ex2 = assertThrows<UnauthorizedException> { store.validateAndConsume(t2) }
         assertThat(ex2.errorCode).isEqualTo(ErrorCode.TOKEN_INVALID)
     }
+
+    @Test
+    fun `consumed token is removed from user set`() {
+        val userId = UUID.randomUUID()
+        val t1 = UUID.randomUUID().toString()
+        val t2 = UUID.randomUUID().toString()
+        store.storeRefreshToken(t1, userId, Duration.ofMinutes(30))
+        store.storeRefreshToken(t2, userId, Duration.ofMinutes(30))
+
+        store.validateAndConsume(t1)  // consume t1
+
+        // t1 must no longer be in the user set
+        val members = template.opsForSet().members("rt:u:$userId") ?: emptySet<String>()
+        assertThat(members).doesNotContain(t1)
+        assertThat(members).contains(t2)   // t2 still active
+    }
 }

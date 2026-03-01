@@ -20,7 +20,9 @@ class RedisTokenStore(private val template: StringRedisTemplate) : TokenStore {
     override fun validateAndConsume(token: String): UUID {
         val userId = template.opsForValue().getAndDelete("rt:$token")
             ?: throw UnauthorizedException("Refresh token invalid or expired", ErrorCode.TOKEN_INVALID)
-        return UUID.fromString(userId)
+        val userUUID = UUID.fromString(userId)
+        template.opsForSet().remove("rt:u:$userUUID", token)
+        return userUUID
     }
 
     override fun revokeAllForUser(userId: UUID) {
