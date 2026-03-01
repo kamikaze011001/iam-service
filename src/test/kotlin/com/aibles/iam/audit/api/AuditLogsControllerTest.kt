@@ -118,6 +118,37 @@ class AuditLogsControllerTest {
     }
 
     @Test
+    fun `GET audit-logs returns metadata as nested JSON object`() {
+        val logId = UUID.randomUUID()
+        val now = Instant.now()
+
+        every { queryAuditLogsUseCase.execute(any()) } returns PageResponse(
+            content = listOf(
+                QueryAuditLogsUseCase.AuditLogItem(
+                    id = logId,
+                    eventType = AuditEvent.USER_CREATED,
+                    userId = null,
+                    actorId = null,
+                    ipAddress = null,
+                    userAgent = null,
+                    metadata = """{"email":"a@b.com"}""",
+                    createdAt = now,
+                )
+            ),
+            page = 0,
+            size = 20,
+            totalElements = 1,
+            totalPages = 1,
+        )
+
+        mockMvc.get("/api/v1/audit-logs")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.data.content[0].metadata.email") { value("a@b.com") }
+            }
+    }
+
+    @Test
     fun `GET audit-logs returns empty page when no logs`() {
         every { queryAuditLogsUseCase.execute(any()) } returns PageResponse(
             content = emptyList(),
