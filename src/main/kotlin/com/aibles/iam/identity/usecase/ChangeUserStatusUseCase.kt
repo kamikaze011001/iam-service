@@ -1,15 +1,21 @@
 package com.aibles.iam.identity.usecase
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.identity.domain.user.UserStatus
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
-class ChangeUserStatusUseCase(private val userRepository: UserRepository) {
+class ChangeUserStatusUseCase(
+    private val userRepository: UserRepository,
+    private val eventPublisher: ApplicationEventPublisher,
+) {
 
     data class Command(val id: UUID, val status: UserStatus)
     data class Result(val user: User)
@@ -21,6 +27,13 @@ class ChangeUserStatusUseCase(private val userRepository: UserRepository) {
             UserStatus.ACTIVE -> user.enable()
             UserStatus.DISABLED -> user.disable()
         }
-        return Result(userRepository.save(user))
+        val saved = userRepository.save(user)
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.USER_STATUS_CHANGED,
+            userId = saved.id,
+            actorId = saved.id,
+            metadata = mapOf("status" to saved.status.name),
+        ))
+        return Result(saved)
     }
 }

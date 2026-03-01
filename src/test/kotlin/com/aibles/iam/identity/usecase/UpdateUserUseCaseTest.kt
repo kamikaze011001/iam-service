@@ -1,5 +1,7 @@
 package com.aibles.iam.identity.usecase
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ErrorCode
@@ -10,12 +12,14 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 import java.util.Optional
 import java.util.UUID
 
 class UpdateUserUseCaseTest {
     private val repo = mockk<UserRepository>()
-    private val useCase = UpdateUserUseCase(repo)
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    private val useCase = UpdateUserUseCase(repo, eventPublisher)
 
     @Test
     fun `updates display name and saves`() {
@@ -27,6 +31,9 @@ class UpdateUserUseCaseTest {
 
         assertThat(result.user.displayName).isEqualTo("New Name")
         verify(exactly = 1) { repo.save(user) }
+        verify(exactly = 1) { eventPublisher.publishEvent(match<AuditDomainEvent> {
+            it.eventType == AuditEvent.USER_UPDATED
+        }) }
     }
 
     @Test

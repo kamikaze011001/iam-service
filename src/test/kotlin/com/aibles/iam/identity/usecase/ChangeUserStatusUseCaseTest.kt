@@ -1,5 +1,7 @@
 package com.aibles.iam.identity.usecase
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.identity.domain.user.UserStatus
@@ -11,12 +13,14 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 import java.util.Optional
 import java.util.UUID
 
 class ChangeUserStatusUseCaseTest {
     private val repo = mockk<UserRepository>()
-    private val useCase = ChangeUserStatusUseCase(repo)
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    private val useCase = ChangeUserStatusUseCase(repo, eventPublisher)
 
     @Test
     fun `disables an active user`() {
@@ -28,6 +32,9 @@ class ChangeUserStatusUseCaseTest {
 
         assertThat(result.user.isActive()).isFalse()
         verify(exactly = 1) { repo.save(user) }
+        verify(exactly = 1) { eventPublisher.publishEvent(match<AuditDomainEvent> {
+            it.eventType == AuditEvent.USER_STATUS_CHANGED
+        }) }
     }
 
     @Test
