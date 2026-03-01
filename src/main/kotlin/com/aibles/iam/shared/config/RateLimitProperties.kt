@@ -6,4 +6,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class RateLimitProperties(
     val enabled: Boolean = true,
     val requestsPerMinute: Long = 100,
+    val trustedProxies: List<String> = emptyList(),
 )
