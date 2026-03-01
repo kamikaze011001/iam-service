@@ -25,6 +25,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/users")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Users", description = "User lifecycle management")
 class UsersController(
     private val getUserUseCase: GetUserUseCase,
     private val createUserUseCase: CreateUserUseCase,

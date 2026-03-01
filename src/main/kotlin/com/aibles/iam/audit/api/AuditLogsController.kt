@@ -15,6 +15,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/audit-logs")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Audit Logs", description = "Query audit trail")
 class AuditLogsController(
     private val queryAuditLogsUseCase: QueryAuditLogsUseCase,
 ) {
