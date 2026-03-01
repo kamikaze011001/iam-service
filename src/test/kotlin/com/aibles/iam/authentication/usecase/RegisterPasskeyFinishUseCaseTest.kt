@@ -6,6 +6,7 @@ import com.aibles.iam.shared.config.WebAuthnProperties
 import com.aibles.iam.shared.error.BadRequestException
 import com.aibles.iam.shared.error.ErrorCode
 import com.webauthn4j.WebAuthnManager
+import com.webauthn4j.converter.util.ObjectConverter
 import com.webauthn4j.data.RegistrationParameters
 import com.webauthn4j.data.RegistrationRequest
 import io.mockk.every
@@ -21,7 +22,10 @@ class RegisterPasskeyFinishUseCaseTest {
     private val credentialRepository = mockk<PasskeyCredentialRepository>()
     private val webAuthnManager = mockk<WebAuthnManager>()
     private val props = WebAuthnProperties(rpId = "localhost", rpOrigin = "http://localhost:8080", rpName = "Test")
-    private val useCase = RegisterPasskeyFinishUseCase(redisChallengeStore, credentialRepository, webAuthnManager, props)
+    private val objectConverter = mockk<ObjectConverter>().also {
+        every { it.cborConverter } returns mockk(relaxed = true)
+    }
+    private val useCase = RegisterPasskeyFinishUseCase(redisChallengeStore, credentialRepository, webAuthnManager, props, objectConverter)
 
     @Test
     fun `expired challenge propagates PASSKEY_CHALLENGE_EXPIRED`() {
