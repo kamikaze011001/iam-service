@@ -23,8 +23,8 @@ class RegisterPasskeyFinishUseCase(
     private val credentialRepository: PasskeyCredentialRepository,
     private val webAuthnManager: WebAuthnManager,
     private val props: WebAuthnProperties,
+    private val objectConverter: ObjectConverter,
 ) {
-    private val objectConverter = ObjectConverter()
 
     data class Command(
         val userId: UUID,
