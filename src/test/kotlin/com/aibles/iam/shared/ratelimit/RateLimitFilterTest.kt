@@ -63,23 +63,70 @@ class RateLimitFilterTest {
 
     @Test
     fun `uses X-Forwarded-For header when present`() {
-        val filter = RateLimitFilter(RateLimitProperties(enabled = true, requestsPerMinute = 1), objectMapper)
+        // The test's MockHttpServletRequest has remoteAddr "127.0.0.1" by default
+        val filter = RateLimitFilter(RateLimitProperties(enabled = true, requestsPerMinute = 1, trustedProxies = listOf("127.0.0.1")), objectMapper)
         val chain = FilterChain { _, _ -> }
 
-        // First IP gets 1 request
         val req1 = MockHttpServletRequest().apply { addHeader("X-Forwarded-For", "1.2.3.4") }
         filter.doFilter(req1, MockHttpServletResponse(), chain)
 
-        // Different IP also gets 1 request
         val req2 = MockHttpServletRequest().apply { addHeader("X-Forwarded-For", "5.6.7.8") }
         val resp2 = MockHttpServletResponse()
         filter.doFilter(req2, resp2, chain)
         assertThat(resp2.status).isNotEqualTo(429)
 
-        // First IP is now exhausted
         val req3 = MockHttpServletRequest().apply { addHeader("X-Forwarded-For", "1.2.3.4") }
         val resp3 = MockHttpServletResponse()
         filter.doFilter(req3, resp3, chain)
         assertThat(resp3.status).isEqualTo(429)
+    }
+
+    @Test
+    fun `X-Forwarded-For is ignored when remoteAddr is not a trusted proxy`() {
+        // Limit = 1 request. If XFF were trusted, "spoofed-ip" would get its own bucket.
+        // Since remoteAddr "127.0.0.1" is not in trusted proxies, XFF is ignored and
+        // both requests share the same bucket (keyed on "127.0.0.1"), so the 2nd is rejected.
+        val props = RateLimitProperties(enabled = true, requestsPerMinute = 1, trustedProxies = emptyList())
+        val filter = RateLimitFilter(props, objectMapper)
+        val chain = FilterChain { _, _ -> }
+
+        val req1 = MockHttpServletRequest().apply {
+            remoteAddr = "127.0.0.1"
+            addHeader("X-Forwarded-For", "spoofed-ip")
+        }
+        filter.doFilter(req1, MockHttpServletResponse(), chain)
+
+        val req2 = MockHttpServletRequest().apply {
+            remoteAddr = "127.0.0.1"
+            addHeader("X-Forwarded-For", "spoofed-ip")
+        }
+        val resp2 = MockHttpServletResponse()
+        filter.doFilter(req2, resp2, chain)
+
+        assertThat(resp2.status).isEqualTo(429)
+    }
+
+    @Test
+    fun `X-Forwarded-For is used when remoteAddr is a trusted proxy`() {
+        val props = RateLimitProperties(enabled = true, requestsPerMinute = 1, trustedProxies = listOf("10.0.0.1"))
+        val filter = RateLimitFilter(props, objectMapper)
+        val chain = FilterChain { _, _ -> }
+
+        // Request from trusted proxy 10.0.0.1 with client IP 1.2.3.4
+        val req1 = MockHttpServletRequest().apply {
+            remoteAddr = "10.0.0.1"
+            addHeader("X-Forwarded-For", "1.2.3.4")
+        }
+        filter.doFilter(req1, MockHttpServletResponse(), chain)
+
+        // Different client IP 5.6.7.8 from same proxy — gets its own bucket, not throttled
+        val req2 = MockHttpServletRequest().apply {
+            remoteAddr = "10.0.0.1"
+            addHeader("X-Forwarded-For", "5.6.7.8")
+        }
+        val resp2 = MockHttpServletResponse()
+        filter.doFilter(req2, resp2, chain)
+
+        assertThat(resp2.status).isNotEqualTo(429)
     }
 }

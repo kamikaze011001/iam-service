@@ -51,6 +51,7 @@ oauth2:
 rate-limit:
   enabled: ${RATE_LIMIT_ENABLED:true}
   requests-per-minute: ${RATE_LIMIT_RPM:100}
+  trusted-proxies: ${RATE_LIMIT_TRUSTED_PROXIES:}
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   allowed-methods: GET,POST,PATCH,DELETE,OPTIONS

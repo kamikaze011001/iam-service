@@ -50,9 +50,16 @@ class RateLimitFilter(
         }
     }
 
-    private fun resolveClientIp(request: HttpServletRequest): String =
-        request.getHeader("X-Forwarded-For")?.split(",")?.first()?.trim()
-            ?: request.remoteAddr
+    private fun resolveClientIp(request: HttpServletRequest): String {
+        val remoteAddr = request.remoteAddr
+        if (properties.trustedProxies.contains(remoteAddr)) {
+            val xff = request.getHeader("X-Forwarded-For")
+            if (!xff.isNullOrBlank()) {
+                return xff.split(",").first().trim()
+            }
+        }
+        return remoteAddr
+    }
 
     private fun createBucket(): Bucket {
         val bandwidth = Bandwidth.builder()
