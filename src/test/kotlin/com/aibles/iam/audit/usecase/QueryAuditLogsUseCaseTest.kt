@@ -8,6 +8,7 @@ import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import java.time.Instant
@@ -60,5 +61,21 @@ class QueryAuditLogsUseCaseTest {
 
         assertThat(result.content).isEmpty()
         assertThat(result.totalElements).isEqualTo(0)
+    }
+
+    @Test
+    fun `execute clamps negative page and oversized size`() {
+        val page = PageImpl(emptyList<AuditLog>(), PageRequest.of(0, 100), 0)
+
+        every {
+            repo.findAll(any<Specification<AuditLog>>(), any<Pageable>())
+        } returns page
+
+        val result = useCase.execute(
+            QueryAuditLogsUseCase.Query(page = -5, size = 9999)
+        )
+
+        assertThat(result.page).isEqualTo(0)
+        assertThat(result.size).isEqualTo(100)
     }
 }

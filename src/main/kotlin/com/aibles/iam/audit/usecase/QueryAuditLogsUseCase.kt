@@ -34,13 +34,15 @@ class QueryAuditLogsUseCase(private val auditLogRepository: AuditLogRepository) 
     )
 
     fun execute(query: Query): PageResponse<AuditLogItem> {
+        val safePage = query.page.coerceAtLeast(0)
+        val safeSize = query.size.coerceIn(1, 100)
         val spec = AuditLogSpecs.filtered(
             eventType = query.eventType,
             userId = query.userId,
             from = query.from,
             to = query.to,
         )
-        val page = auditLogRepository.findAll(spec, PageRequest.of(query.page, query.size, Sort.by(Sort.Direction.DESC, "createdAt")))
+        val page = auditLogRepository.findAll(spec, PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")))
         return PageResponse(
             content = page.content.map { log ->
                 AuditLogItem(
