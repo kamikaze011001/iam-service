@@ -6,7 +6,8 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import org.hibernate.annotations.ColumnTransformer
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.util.UUID
 
@@ -26,15 +27,14 @@ class AuditLog private constructor(
     @Column(name = "actor_id")
     val actorId: UUID?,
 
-    @Column(name = "ip_address", columnDefinition = "inet")
-    @ColumnTransformer(write = "CAST(? AS inet)")
+    @Column(name = "ip_address")
     val ipAddress: String?,
 
     @Column(name = "user_agent")
     val userAgent: String?,
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")
-    @ColumnTransformer(write = "CAST(? AS jsonb)")
     val metadata: String?,
 
     @Column(name = "created_at", nullable = false)
