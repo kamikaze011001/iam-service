@@ -1,5 +1,7 @@
 package com.aibles.iam.identity.usecase
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ConflictException
@@ -11,10 +13,12 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 
 class CreateUserUseCaseTest {
     private val repo = mockk<UserRepository>()
-    private val useCase = CreateUserUseCase(repo)
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    private val useCase = CreateUserUseCase(repo, eventPublisher)
 
     @Test
     fun `creates and saves user`() {
@@ -26,6 +30,9 @@ class CreateUserUseCaseTest {
         assertThat(result.user.email).isEqualTo("a@b.com")
         assertThat(result.user.displayName).isEqualTo("Alice")
         verify(exactly = 1) { repo.save(any()) }
+        verify(exactly = 1) { eventPublisher.publishEvent(match<AuditDomainEvent> {
+            it.eventType == AuditEvent.USER_CREATED
+        }) }
     }
 
     @Test

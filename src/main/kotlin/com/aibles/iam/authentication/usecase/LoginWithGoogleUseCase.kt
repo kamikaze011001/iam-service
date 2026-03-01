@@ -1,6 +1,7 @@
 package com.aibles.iam.authentication.usecase
 
 import com.aibles.iam.authorization.usecase.IssueTokenUseCase
+import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.shared.error.ErrorCode
@@ -15,7 +16,7 @@ class LoginWithGoogleUseCase(
     private val issueTokenUseCase: IssueTokenUseCase,
 ) {
     data class Command(val oidcUser: OidcUser)
-    data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long)
+    data class Result(val user: User, val accessToken: String, val refreshToken: String, val expiresIn: Long)
 
     fun execute(command: Command): Result {
         val oidcUser = command.oidcUser
@@ -34,6 +35,6 @@ class LoginWithGoogleUseCase(
         userRepository.save(user)
 
         val tokens = issueTokenUseCase.execute(IssueTokenUseCase.Command(user))
-        return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
+        return Result(user, tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
     }
 }

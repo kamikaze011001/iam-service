@@ -54,6 +54,7 @@ class LoginWithGoogleUseCaseTest {
 
         val result = useCase.execute(LoginWithGoogleUseCase.Command(oidcUser))
 
+        assertThat(result.user.email).isEqualTo("new@example.com")
         assertThat(result.accessToken).isEqualTo("access")
         verify(exactly = 1) { createUserUseCase.execute(any()) }
     }
@@ -68,6 +69,7 @@ class LoginWithGoogleUseCaseTest {
 
         val result = useCase.execute(LoginWithGoogleUseCase.Command(oidcUser))
 
+        assertThat(result.user.email).isEqualTo("existing@example.com")
         assertThat(result.accessToken).isEqualTo("access2")
         verify(exactly = 0) { createUserUseCase.execute(any()) }
     }

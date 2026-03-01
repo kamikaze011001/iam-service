@@ -1,5 +1,7 @@
 package com.aibles.iam.authorization.usecase
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authorization.domain.token.TokenStore
 import com.aibles.iam.authorization.infra.JwtService
 import com.aibles.iam.identity.domain.user.User
@@ -12,9 +14,11 @@ import com.nimbusds.jose.jwk.RSAKey
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
@@ -33,9 +37,10 @@ class RefreshTokenUseCaseTest {
     )
     private val tokenStore = mockk<TokenStore>()
     private val getUserUseCase = mockk<GetUserUseCase>()
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
     private val jwtService = JwtService(rsaKey, props)
     private val issueToken = IssueTokenUseCase(jwtService, tokenStore, props)
-    private val useCase = RefreshTokenUseCase(tokenStore, getUserUseCase, issueToken)
+    private val useCase = RefreshTokenUseCase(tokenStore, getUserUseCase, issueToken, eventPublisher)
 
     @Test
     fun `valid refresh token returns new token pair`() {
@@ -48,6 +53,9 @@ class RefreshTokenUseCaseTest {
 
         assertThat(result.accessToken).isNotBlank()
         assertThat(result.refreshToken).isNotBlank()
+        verify(exactly = 1) { eventPublisher.publishEvent(match<AuditDomainEvent> {
+            it.eventType == AuditEvent.TOKEN_REFRESHED
+        }) }
     }
 
     @Test

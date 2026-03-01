@@ -1,11 +1,14 @@
 package com.aibles.iam.authentication.infra
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authentication.api.dto.TokenResponse
 import com.aibles.iam.authentication.usecase.LoginWithGoogleUseCase
 import com.aibles.iam.shared.response.ApiResponse
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Component
 class GoogleOAuth2SuccessHandler(
     private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val objectMapper: ObjectMapper,
+    private val eventPublisher: ApplicationEventPublisher,
     private val requestCache: HttpSessionRequestCache = HttpSessionRequestCache(),
     private val savedRequestHandler: SavedRequestAwareAuthenticationSuccessHandler = SavedRequestAwareAuthenticationSuccessHandler(),
 ) : AuthenticationSuccessHandler {
@@ -40,6 +44,12 @@ class GoogleOAuth2SuccessHandler(
 
         // Ensure user exists in DB for both flows
         val result = loginWithGoogleUseCase.execute(LoginWithGoogleUseCase.Command(principal))
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.LOGIN_GOOGLE_SUCCESS,
+            userId = result.user.id,
+            actorId = result.user.id,
+            metadata = mapOf("email" to result.user.email),
+        ))
 
         // OAuth2 AS authorization code flow: a saved request is in the session.
         // Redirect back so the AS can issue the authorization code to the client.
