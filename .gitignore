@@ -32,6 +32,8 @@ replay_pid*
 # Build outputs
 build/
 .gradle/
+.idea
+.claude
 
 # Environment secrets
 .env
