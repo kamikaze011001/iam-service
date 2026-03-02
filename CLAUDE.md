@@ -16,18 +16,16 @@ The system default Java is **NOT Java 24**. SDKMAN is installed and Java 24 is m
 
 **Java 24 is already installed:** `24.0.2-amzn` (Amazon Corretto)
 
-To activate Java 24 for the current shell (run once per terminal session):
-```bash
-source ~/.sdkman/bin/sdkman-init.sh
-sdk use java 24.0.2-amzn
-```
+Java 24 is **already active** in every shell session. The global default has been set via SDKMAN.
 
-To set as global default (already done — persists across sessions):
-```bash
-sdk default java 24.0.2-amzn
-```
-
-**Do NOT run `source ~/.sdkman/bin/sdkman-init.sh` before every command.** Run it once at the start of a terminal session, then all `./gradlew` commands work normally.
+> ## ⛔ SDKMAN INIT — ABSOLUTE PROHIBITION ⛔
+>
+> **NEVER run `source ~/.sdkman/bin/sdkman-init.sh` in any command, ever.**
+> **NEVER run `sdk use java ...` in any command, ever.**
+> **NEVER prepend these to `./gradlew`, `java`, or any other command.**
+>
+> Just run `./gradlew <task>` directly. That's it.
+> Violating this rule is always wrong, no exceptions, no edge cases.
 
 ---
 
