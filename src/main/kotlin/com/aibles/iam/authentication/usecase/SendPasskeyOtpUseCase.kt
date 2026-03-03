@@ -13,11 +13,15 @@ class SendPasskeyOtpUseCase(
     private val otpStore: RedisOtpStore,
     private val emailService: EmailService,
 ) {
+    companion object {
+        private val random = SecureRandom()
+    }
+
     data class Command(val userId: UUID)
 
     fun execute(command: Command) {
         val user = getUserUseCase.execute(GetUserUseCase.Query(command.userId))
-        val code = String.format("%06d", SecureRandom().nextInt(1_000_000))
+        val code = String.format("%06d", random.nextInt(1_000_000))
         otpStore.saveOtp(command.userId, code)
         emailService.sendOtp(user.email, code)
     }

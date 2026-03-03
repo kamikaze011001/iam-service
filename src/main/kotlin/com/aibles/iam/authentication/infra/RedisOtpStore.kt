@@ -26,8 +26,7 @@ class RedisOtpStore(private val template: StringRedisTemplate) {
         template.opsForValue().get("$OTP_PREFIX$userId")
 
     fun deleteOtp(userId: UUID) {
-        template.delete("$OTP_PREFIX$userId")
-        template.delete("$ATTEMPTS_PREFIX$userId")
+        template.delete(listOf("$OTP_PREFIX$userId", "$ATTEMPTS_PREFIX$userId"))
     }
 
     /** Increments and returns the new attempt count. */

@@ -38,7 +38,7 @@ class GoogleOAuth2SuccessHandler(
         if (principal !is OidcUser) {
             response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
             response.contentType = MediaType.TEXT_HTML_VALUE
-            response.writer.write(errorHtml("Unexpected authentication principal type"))
+            response.writer.write(errorHtml("Unexpected authentication principal type", corsProperties.frontendUrl))
             return
         }
 
@@ -113,11 +113,11 @@ class GoogleOAuth2SuccessHandler(
         """.trimIndent()
     }
 
-    private fun errorHtml(message: String): String = """
+    private fun errorHtml(message: String, targetOrigin: String): String = """
         <!DOCTYPE html><html><body>
         <script>
           if (window.opener) {
-            window.opener.postMessage({type:'GOOGLE_AUTH_ERROR',message:${objectMapper.writeValueAsString(message)}}, '*');
+            window.opener.postMessage({type:'GOOGLE_AUTH_ERROR',message:${objectMapper.writeValueAsString(message)}}, ${objectMapper.writeValueAsString(targetOrigin)});
           }
           window.close();
         </script>

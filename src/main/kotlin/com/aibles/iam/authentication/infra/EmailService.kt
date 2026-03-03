@@ -1,11 +1,13 @@
 package com.aibles.iam.authentication.infra
 
 import com.aibles.iam.shared.config.MailProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Component
 
 @Component
+@EnableConfigurationProperties(MailProperties::class)
 class EmailService(
     private val mailSender: JavaMailSender,
     private val mailProperties: MailProperties,
