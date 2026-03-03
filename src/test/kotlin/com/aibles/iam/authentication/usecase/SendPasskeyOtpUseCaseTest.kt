@@ -8,7 +8,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import com.aibles.iam.shared.error.BadRequestException
+import com.aibles.iam.shared.error.ErrorCode
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -33,5 +36,37 @@ class SendPasskeyOtpUseCaseTest {
         val code = codeSlot.captured
         assertThat(code).matches("\\d{6}")
         verify(exactly = 1) { emailService.sendOtp("user@test.com", code) }
+    }
+
+    @Test
+    fun `throws BAD_REQUEST when user email is blank`() {
+        val userId = UUID.randomUUID()
+        val user = mockk<User> { every { email } returns "" }
+        every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns user
+
+        assertThatThrownBy { useCase.execute(SendPasskeyOtpUseCase.Command(userId)) }
+            .isInstanceOf(BadRequestException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.BAD_REQUEST)
+
+        verify(exactly = 0) { otpStore.incrementSendCount(any()) }
+        verify(exactly = 0) { emailService.sendOtp(any(), any()) }
+    }
+
+    @Test
+    fun `throws OTP_SEND_LIMIT_EXCEEDED when send count exceeds limit`() {
+        val userId = UUID.randomUUID()
+        val user = mockk<User> { every { email } returns "user@test.com" }
+        every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns user
+        every { otpStore.incrementSendCount(userId) } returns RedisOtpStore.MAX_SEND_COUNT + 1
+        every { otpStore.maxSendCount } returns RedisOtpStore.MAX_SEND_COUNT
+
+        assertThatThrownBy { useCase.execute(SendPasskeyOtpUseCase.Command(userId)) }
+            .isInstanceOf(BadRequestException::class.java)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.OTP_SEND_LIMIT_EXCEEDED)
+
+        verify(exactly = 0) { otpStore.saveOtp(any(), any()) }
+        verify(exactly = 0) { emailService.sendOtp(any(), any()) }
     }
 }
