@@ -15,6 +15,9 @@ class RedisOtpStore(private val template: StringRedisTemplate) {
         private val OTP_TTL   = Duration.ofMinutes(5)
         private val TOKEN_TTL = Duration.ofMinutes(10)
         const val MAX_ATTEMPTS = 3L
+        private const val SEND_PREFIX = "otp:reg:sends:"
+        private val SEND_TTL          = Duration.ofMinutes(10)
+        const val MAX_SEND_COUNT      = 3L
     }
 
     fun saveOtp(userId: UUID, code: String) {
@@ -38,6 +41,16 @@ class RedisOtpStore(private val template: StringRedisTemplate) {
     }
 
     val maxAttempts: Long get() = MAX_ATTEMPTS
+
+    val maxSendCount: Long get() = MAX_SEND_COUNT
+
+    /** Increments and returns the new send count within the 10-minute window. */
+    fun incrementSendCount(userId: UUID): Long {
+        val key = "$SEND_PREFIX$userId"
+        val count = template.opsForValue().increment(key) ?: 1L
+        if (count == 1L) template.expire(key, SEND_TTL)
+        return count
+    }
 
     fun saveOtpToken(token: String, userId: UUID) {
         template.opsForValue().set("$TOKEN_PREFIX$token", userId.toString(), TOKEN_TTL)
