@@ -11,23 +11,28 @@ import java.util.UUID
 @Component
 class RedisTokenStore(private val template: StringRedisTemplate) : TokenStore {
 
+    companion object {
+        private const val TOKEN_PREFIX = "rt:"
+        private const val USER_SET_PREFIX = "rt:u:"
+    }
+
     override fun storeRefreshToken(token: String, userId: UUID, ttl: Duration) {
-        template.opsForValue().set("rt:$token", userId.toString(), ttl)
-        template.opsForSet().add("rt:u:$userId", token)
-        template.expire("rt:u:$userId", ttl)
+        template.opsForValue().set("$TOKEN_PREFIX$token", userId.toString(), ttl)
+        template.opsForSet().add("$USER_SET_PREFIX$userId", token)
+        template.expire("$USER_SET_PREFIX$userId", ttl)
     }
 
     override fun validateAndConsume(token: String): UUID {
-        val userId = template.opsForValue().getAndDelete("rt:$token")
+        val userId = template.opsForValue().getAndDelete("$TOKEN_PREFIX$token")
             ?: throw UnauthorizedException("Refresh token invalid or expired", ErrorCode.TOKEN_INVALID)
         val userUUID = UUID.fromString(userId)
-        template.opsForSet().remove("rt:u:$userUUID", token)
+        template.opsForSet().remove("$USER_SET_PREFIX$userUUID", token)
         return userUUID
     }
 
     override fun revokeAllForUser(userId: UUID) {
-        val tokens = template.opsForSet().members("rt:u:$userId") ?: emptySet()
-        tokens.forEach { token -> template.delete("rt:$token") }
-        template.delete("rt:u:$userId")
+        val tokens = template.opsForSet().members("$USER_SET_PREFIX$userId") ?: emptySet()
+        val keys = tokens.map { "$TOKEN_PREFIX$it" } + "$USER_SET_PREFIX$userId"
+        template.delete(keys)
     }
 }
