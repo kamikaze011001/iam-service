@@ -75,4 +75,24 @@ class RedisOtpStoreTest {
         assertThat(store.consumeOtpToken(token)).isEqualTo(userId)
         assertThat(store.consumeOtpToken(token)).isNull()  // one-time
     }
+
+    @Test
+    fun `incrementSendCount increments on each call`() {
+        val userId = UUID.randomUUID()
+
+        assertThat(store.incrementSendCount(userId)).isEqualTo(1L)
+        assertThat(store.incrementSendCount(userId)).isEqualTo(2L)
+        assertThat(store.incrementSendCount(userId)).isEqualTo(3L)
+    }
+
+    @Test
+    fun `incrementSendCount is independent per user`() {
+        val userA = UUID.randomUUID()
+        val userB = UUID.randomUUID()
+
+        store.incrementSendCount(userA)
+        store.incrementSendCount(userA)
+
+        assertThat(store.incrementSendCount(userB)).isEqualTo(1L)
+    }
 }
