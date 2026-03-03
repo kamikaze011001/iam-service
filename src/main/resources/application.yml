@@ -27,6 +27,17 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID:placeholder}
             client-secret: ${GOOGLE_CLIENT_SECRET:placeholder}
             scope: openid,email,profile
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 server:
   port: ${PORT:8080}
 management:
@@ -52,6 +63,9 @@ rate-limit:
   enabled: ${RATE_LIMIT_ENABLED:true}
   requests-per-minute: ${RATE_LIMIT_RPM:100}
   trusted-proxies: ${RATE_LIMIT_TRUSTED_PROXIES:}
+mail:
+  from: ${MAIL_FROM:noreply@yourdomain.com}
+  from-name: ${MAIL_FROM_NAME:IAM Service}
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   allowed-methods: GET,POST,PATCH,DELETE,OPTIONS
