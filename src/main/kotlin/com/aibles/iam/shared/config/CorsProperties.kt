@@ -8,4 +8,5 @@ data class CorsProperties(
     val allowedMethods: List<String> = listOf("GET", "POST", "PATCH", "DELETE", "OPTIONS"),
     val allowedHeaders: List<String> = listOf("Authorization", "Content-Type"),
     val maxAge: Long = 3600,
+    val frontendUrl: String = "http://localhost:3000",
 )

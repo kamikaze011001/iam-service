@@ -9,6 +9,8 @@ import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
 import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
+import com.aibles.iam.authentication.usecase.SendPasskeyOtpUseCase
+import com.aibles.iam.authentication.usecase.VerifyPasskeyOtpUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -54,6 +56,8 @@ class PasskeyControllerTest {
     @MockkBean lateinit var deletePasskeyUseCase: DeletePasskeyUseCase
     @MockkBean lateinit var credentialRepository: PasskeyCredentialRepository
     @MockkBean lateinit var getUserUseCase: GetUserUseCase
+    @MockkBean lateinit var sendPasskeyOtpUseCase: SendPasskeyOtpUseCase
+    @MockkBean lateinit var verifyPasskeyOtpUseCase: VerifyPasskeyOtpUseCase
 
     // AuthController deps (scanned by @WebMvcTest)
     @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
@@ -100,7 +104,7 @@ class PasskeyControllerTest {
 
         mockMvc.post("/api/v1/auth/passkey/register/start") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"displayName": "My Key"}"""
+            content = """{"displayName": "My Key", "otpToken": "valid-otp-token"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.success") { value(true) }

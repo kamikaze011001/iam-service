@@ -2,10 +2,9 @@ package com.aibles.iam.authentication.infra
 
 import com.aibles.iam.audit.domain.log.AuditDomainEvent
 import com.aibles.iam.audit.domain.log.AuditEvent
-import com.aibles.iam.authentication.api.dto.TokenResponse
 import com.aibles.iam.authentication.usecase.LoginWithGoogleUseCase
 import com.aibles.iam.authentication.usecase.SyncGoogleUserUseCase
-import com.aibles.iam.shared.response.ApiResponse
+import com.aibles.iam.shared.config.CorsProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -24,8 +23,10 @@ class GoogleOAuth2SuccessHandler(
     private val loginWithGoogleUseCase: LoginWithGoogleUseCase,
     private val objectMapper: ObjectMapper,
     private val eventPublisher: ApplicationEventPublisher,
+    private val corsProperties: CorsProperties,
     private val requestCache: HttpSessionRequestCache = HttpSessionRequestCache(),
-    private val savedRequestHandler: SavedRequestAwareAuthenticationSuccessHandler = SavedRequestAwareAuthenticationSuccessHandler(),
+    private val savedRequestHandler: SavedRequestAwareAuthenticationSuccessHandler =
+        SavedRequestAwareAuthenticationSuccessHandler(),
 ) : AuthenticationSuccessHandler {
 
     override fun onAuthenticationSuccess(
@@ -36,17 +37,12 @@ class GoogleOAuth2SuccessHandler(
         val principal = authentication.principal
         if (principal !is OidcUser) {
             response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            response.contentType = MediaType.APPLICATION_JSON_VALUE
-            objectMapper.writeValue(
-                response.writer,
-                ApiResponse.error("INTERNAL_ERROR", "Unexpected authentication principal type")
-            )
+            response.contentType = MediaType.TEXT_HTML_VALUE
+            response.writer.write(errorHtml("Unexpected authentication principal type"))
             return
         }
 
-        // Check for OAuth2 AS authorization code flow FIRST to avoid issuing tokens that
-        // will be immediately discarded. The AS redirect path only needs the user to exist
-        // in the DB — token issuance is handled by the AS after redirecting back.
+        // AS authorization code flow: just sync the user and let the AS handle redirect.
         val savedRequest = requestCache.getRequest(request, response)
         if (savedRequest != null) {
             val result = syncGoogleUserUseCase.execute(SyncGoogleUserUseCase.Command(principal))
@@ -60,9 +56,7 @@ class GoogleOAuth2SuccessHandler(
             return
         }
 
-        // Direct Google login flow: upsert user + issue tokens + return JSON.
-        // Note: first-time users also trigger USER_CREATED (from CreateUserUseCase), so
-        // a first login produces two audit events: USER_CREATED + LOGIN_GOOGLE_SUCCESS.
+        // Direct Google login (popup flow): issue tokens, relay via postMessage, close popup.
         val result = loginWithGoogleUseCase.execute(LoginWithGoogleUseCase.Command(principal))
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.LOGIN_GOOGLE_SUCCESS,
@@ -70,9 +64,64 @@ class GoogleOAuth2SuccessHandler(
             actorId = result.user.id,
             metadata = mapOf("email" to result.user.email),
         ))
-        val body = ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
-        response.contentType = MediaType.APPLICATION_JSON_VALUE
+
         response.status = HttpServletResponse.SC_OK
-        objectMapper.writeValue(response.writer, body)
+        response.contentType = MediaType.TEXT_HTML_VALUE
+        response.writer.write(
+            successHtml(
+                accessToken = result.accessToken,
+                refreshToken = result.refreshToken,
+                expiresIn = result.expiresIn,
+                targetOrigin = corsProperties.frontendUrl,
+            )
+        )
     }
+
+    private fun successHtml(
+        accessToken: String,
+        refreshToken: String,
+        expiresIn: Long,
+        targetOrigin: String,
+    ): String {
+        // Serialize via Jackson to ensure correct JSON escaping inside the script.
+        val payload = objectMapper.writeValueAsString(
+            mapOf(
+                "type" to "GOOGLE_AUTH_SUCCESS",
+                "accessToken" to accessToken,
+                "refreshToken" to refreshToken,
+                "expiresIn" to expiresIn,
+            )
+        )
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Authenticating…</title></head>
+            <body>
+            <script>
+              (function() {
+                var payload = $payload;
+                var origin  = ${objectMapper.writeValueAsString(targetOrigin)};
+                if (window.opener) {
+                  window.opener.postMessage(payload, origin);
+                }
+                window.close();
+              })();
+            </script>
+            <p>Authentication complete. This window will close automatically.</p>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+
+    private fun errorHtml(message: String): String = """
+        <!DOCTYPE html><html><body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({type:'GOOGLE_AUTH_ERROR',message:${objectMapper.writeValueAsString(message)}}, '*');
+          }
+          window.close();
+        </script>
+        <p>Authentication failed: $message</p>
+        </body></html>
+    """.trimIndent()
 }

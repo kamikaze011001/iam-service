@@ -9,6 +9,8 @@ import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
 import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
+import com.aibles.iam.authentication.usecase.SendPasskeyOtpUseCase
+import com.aibles.iam.authentication.usecase.VerifyPasskeyOtpUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -59,6 +61,8 @@ class AuditLogsControllerTest {
     @MockkBean lateinit var authenticatePasskeyFinishUseCase: AuthenticatePasskeyFinishUseCase
     @MockkBean lateinit var deletePasskeyUseCase: DeletePasskeyUseCase
     @MockkBean lateinit var passkeyCredentialRepository: PasskeyCredentialRepository
+    @MockkBean lateinit var sendPasskeyOtpUseCase: SendPasskeyOtpUseCase
+    @MockkBean lateinit var verifyPasskeyOtpUseCase: VerifyPasskeyOtpUseCase
 
     @Test
     fun `GET audit-logs returns paginated response`() {
