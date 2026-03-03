@@ -1,19 +1,26 @@
 package com.aibles.iam.authentication.api
 
+import com.aibles.iam.audit.domain.log.AuditDomainEvent
+import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authentication.api.dto.AuthenticateFinishRequest
 import com.aibles.iam.authentication.api.dto.PasskeyCredentialResponse
 import com.aibles.iam.authentication.api.dto.RegisterFinishRequest
 import com.aibles.iam.authentication.api.dto.RegisterStartRequest
 import com.aibles.iam.authentication.api.dto.TokenResponse
+import com.aibles.iam.authentication.api.dto.VerifyOtpRequest
+import com.aibles.iam.authentication.api.dto.VerifyOtpResponse
 import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
 import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
+import com.aibles.iam.authentication.usecase.SendPasskeyOtpUseCase
+import com.aibles.iam.authentication.usecase.VerifyPasskeyOtpUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -38,17 +45,55 @@ class PasskeyController(
     private val deletePasskeyUseCase: DeletePasskeyUseCase,
     private val credentialRepository: PasskeyCredentialRepository,
     private val getUserUseCase: GetUserUseCase,
+    private val sendPasskeyOtpUseCase: SendPasskeyOtpUseCase,
+    private val verifyPasskeyOtpUseCase: VerifyPasskeyOtpUseCase,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
+
+    @PostMapping("/register/send-otp")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    fun sendOtp(@AuthenticationPrincipal principal: Jwt): ApiResponse<Unit> {
+        val userId = UUID.fromString(principal.subject)
+        sendPasskeyOtpUseCase.execute(SendPasskeyOtpUseCase.Command(userId))
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_OTP_SENT,
+            userId = userId,
+            actorId = userId,
+        ))
+        return ApiResponse.ok(Unit)
+    }
+
+    @PostMapping("/register/verify-otp")
+    fun verifyOtp(
+        @AuthenticationPrincipal principal: Jwt,
+        @Valid @RequestBody request: VerifyOtpRequest,
+    ): ApiResponse<VerifyOtpResponse> {
+        val userId = UUID.fromString(principal.subject)
+        val result = verifyPasskeyOtpUseCase.execute(
+            VerifyPasskeyOtpUseCase.Command(userId, request.code)
+        )
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_OTP_VERIFIED,
+            userId = userId,
+            actorId = userId,
+        ))
+        return ApiResponse.ok(VerifyOtpResponse(result.otpToken))
+    }
 
     @PostMapping("/register/start")
     fun registerStart(
         @AuthenticationPrincipal principal: Jwt,
-        @RequestBody request: RegisterStartRequest,
+        @Valid @RequestBody request: RegisterStartRequest,
     ): ApiResponse<RegisterPasskeyStartUseCase.Result> {
         val userId = UUID.fromString(principal.subject)
         val user = getUserUseCase.execute(GetUserUseCase.Query(userId))
         val result = registerPasskeyStartUseCase.execute(
-            RegisterPasskeyStartUseCase.Command(userId, user.email, request.displayName)
+            RegisterPasskeyStartUseCase.Command(
+                userId = userId,
+                userEmail = user.email,
+                displayName = request.displayName,
+                otpToken = request.otpToken,
+            )
         )
         return ApiResponse.ok(result)
     }
