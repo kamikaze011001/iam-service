@@ -41,6 +41,7 @@ class SecurityConfig(
                         "/api/v1/auth/logout",
                         "/api/v1/auth/passkey/authenticate/start",
                         "/api/v1/auth/passkey/authenticate/finish",
+                        "/api/v1/auth/register/**",
                         "/actuator/health", "/actuator/info",
                         "/swagger-ui/**", "/v3/api-docs/**",
                     ).permitAll()
