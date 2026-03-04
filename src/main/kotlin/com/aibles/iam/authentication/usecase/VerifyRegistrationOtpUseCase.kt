@@ -8,19 +8,19 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
-class VerifyPasskeyOtpUseCase(private val otpStore: RedisOtpStore) {
+class VerifyRegistrationOtpUseCase(private val otpStore: RedisOtpStore) {
 
-    data class Command(val userId: UUID, val code: String)
+    data class Command(val email: String, val code: String)
     data class Result(val otpToken: String)
 
     fun execute(command: Command): Result {
-        val key = command.userId.toString()
-        val attempts = otpStore.incrementAttempts(OtpScope.PASSKEY_REG, key)
+        val email = command.email.lowercase().trim()
+        val attempts = otpStore.incrementAttempts(OtpScope.SIGNUP, email)
         if (attempts > otpStore.maxAttempts) {
             throw BadRequestException("Too many OTP attempts. Please request a new code.", ErrorCode.OTP_MAX_ATTEMPTS)
         }
 
-        val stored = otpStore.getOtp(OtpScope.PASSKEY_REG, key)
+        val stored = otpStore.getOtp(OtpScope.SIGNUP, email)
             ?: throw BadRequestException("OTP expired. Please request a new code.", ErrorCode.OTP_EXPIRED)
 
         if (stored != command.code) {
@@ -28,8 +28,8 @@ class VerifyPasskeyOtpUseCase(private val otpStore: RedisOtpStore) {
         }
 
         val otpToken = UUID.randomUUID().toString()
-        otpStore.deleteOtp(OtpScope.PASSKEY_REG, key)
-        otpStore.saveOtpToken(OtpScope.PASSKEY_REG, otpToken, key)
+        otpStore.deleteOtp(OtpScope.SIGNUP, email)
+        otpStore.saveOtpToken(OtpScope.SIGNUP, otpToken, email)
         return Result(otpToken)
     }
 }

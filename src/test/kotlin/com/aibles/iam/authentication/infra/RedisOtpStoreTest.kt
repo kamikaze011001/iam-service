@@ -33,66 +33,82 @@ class RedisOtpStoreTest {
         template.connectionFactory?.connection?.serverCommands()?.flushAll()
     }
 
+    // --- PASSKEY_REG scope (existing behavior, new signature) ---
+
     @Test
     fun `stores OTP and can retrieve it`() {
-        val userId = UUID.randomUUID()
-        store.saveOtp(userId, "123456")
-        assertThat(store.getOtp(userId)).isEqualTo("123456")
+        val key = UUID.randomUUID().toString()
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "123456")
+        assertThat(store.getOtp(OtpScope.PASSKEY_REG, key)).isEqualTo("123456")
     }
 
     @Test
     fun `getOtp returns null after deletion`() {
-        val userId = UUID.randomUUID()
-        store.saveOtp(userId, "999999")
-        store.deleteOtp(userId)
-        assertThat(store.getOtp(userId)).isNull()
+        val key = UUID.randomUUID().toString()
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "999999")
+        store.deleteOtp(OtpScope.PASSKEY_REG, key)
+        assertThat(store.getOtp(OtpScope.PASSKEY_REG, key)).isNull()
     }
 
     @Test
     fun `incrementAttempts returns current count`() {
-        val userId = UUID.randomUUID()
-        store.saveOtp(userId, "111111")
-        assertThat(store.incrementAttempts(userId)).isEqualTo(1L)
-        assertThat(store.incrementAttempts(userId)).isEqualTo(2L)
+        val key = UUID.randomUUID().toString()
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "111111")
+        assertThat(store.incrementAttempts(OtpScope.PASSKEY_REG, key)).isEqualTo(1L)
+        assertThat(store.incrementAttempts(OtpScope.PASSKEY_REG, key)).isEqualTo(2L)
     }
 
     @Test
     fun `saveOtp resets attempt counter`() {
-        val userId = UUID.randomUUID()
-        store.saveOtp(userId, "111111")
-        store.incrementAttempts(userId)
-        store.incrementAttempts(userId)
-        // resend resets attempts
-        store.saveOtp(userId, "222222")
-        assertThat(store.incrementAttempts(userId)).isEqualTo(1L)
+        val key = UUID.randomUUID().toString()
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "111111")
+        store.incrementAttempts(OtpScope.PASSKEY_REG, key)
+        store.incrementAttempts(OtpScope.PASSKEY_REG, key)
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "222222")
+        assertThat(store.incrementAttempts(OtpScope.PASSKEY_REG, key)).isEqualTo(1L)
     }
 
     @Test
     fun `saves and consumes otpToken`() {
-        val userId = UUID.randomUUID()
         val token = UUID.randomUUID().toString()
-        store.saveOtpToken(token, userId)
-        assertThat(store.consumeOtpToken(token)).isEqualTo(userId)
-        assertThat(store.consumeOtpToken(token)).isNull()  // one-time
+        store.saveOtpToken(OtpScope.PASSKEY_REG, token, "some-value")
+        assertThat(store.consumeOtpToken(OtpScope.PASSKEY_REG, token)).isEqualTo("some-value")
+        assertThat(store.consumeOtpToken(OtpScope.PASSKEY_REG, token)).isNull()
     }
 
     @Test
     fun `incrementSendCount increments on each call`() {
-        val userId = UUID.randomUUID()
-
-        assertThat(store.incrementSendCount(userId)).isEqualTo(1L)
-        assertThat(store.incrementSendCount(userId)).isEqualTo(2L)
-        assertThat(store.incrementSendCount(userId)).isEqualTo(3L)
+        val key = UUID.randomUUID().toString()
+        assertThat(store.incrementSendCount(OtpScope.PASSKEY_REG, key)).isEqualTo(1L)
+        assertThat(store.incrementSendCount(OtpScope.PASSKEY_REG, key)).isEqualTo(2L)
+        assertThat(store.incrementSendCount(OtpScope.PASSKEY_REG, key)).isEqualTo(3L)
     }
 
     @Test
-    fun `incrementSendCount is independent per user`() {
-        val userA = UUID.randomUUID()
-        val userB = UUID.randomUUID()
+    fun `incrementSendCount is independent per key`() {
+        val keyA = UUID.randomUUID().toString()
+        val keyB = UUID.randomUUID().toString()
+        store.incrementSendCount(OtpScope.PASSKEY_REG, keyA)
+        store.incrementSendCount(OtpScope.PASSKEY_REG, keyA)
+        assertThat(store.incrementSendCount(OtpScope.PASSKEY_REG, keyB)).isEqualTo(1L)
+    }
 
-        store.incrementSendCount(userA)
-        store.incrementSendCount(userA)
+    // --- Cross-scope isolation ---
 
-        assertThat(store.incrementSendCount(userB)).isEqualTo(1L)
+    @Test
+    fun `different scopes are independent`() {
+        val key = "shared-key@test.com"
+        store.saveOtp(OtpScope.PASSKEY_REG, key, "111111")
+        store.saveOtp(OtpScope.SIGNUP, key, "222222")
+        assertThat(store.getOtp(OtpScope.PASSKEY_REG, key)).isEqualTo("111111")
+        assertThat(store.getOtp(OtpScope.SIGNUP, key)).isEqualTo("222222")
+    }
+
+    @Test
+    fun `signup scope token stores and consumes string value`() {
+        val token = UUID.randomUUID().toString()
+        store.saveOtpToken(OtpScope.SIGNUP, token, "user@test.com")
+        assertThat(store.consumeOtpToken(OtpScope.SIGNUP, token)).isEqualTo("user@test.com")
+        assertThat(store.consumeOtpToken(OtpScope.SIGNUP, token)).isNull()
     }
 }

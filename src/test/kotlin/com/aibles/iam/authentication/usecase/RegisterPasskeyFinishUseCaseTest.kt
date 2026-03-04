@@ -1,14 +1,9 @@
 package com.aibles.iam.authentication.usecase
 
 import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
-import com.aibles.iam.authentication.infra.RedisChallengeStore
-import com.aibles.iam.shared.config.WebAuthnProperties
+import com.aibles.iam.authentication.infra.WebAuthnCeremonyService
 import com.aibles.iam.shared.error.BadRequestException
 import com.aibles.iam.shared.error.ErrorCode
-import com.webauthn4j.WebAuthnManager
-import com.webauthn4j.converter.util.ObjectConverter
-import com.webauthn4j.data.RegistrationParameters
-import com.webauthn4j.data.RegistrationRequest
 import io.mockk.every
 import io.mockk.mockk
 import org.assertj.core.api.Assertions.assertThat
@@ -18,18 +13,13 @@ import java.util.UUID
 
 class RegisterPasskeyFinishUseCaseTest {
 
-    private val redisChallengeStore = mockk<RedisChallengeStore>()
-    private val credentialRepository = mockk<PasskeyCredentialRepository>()
-    private val webAuthnManager = mockk<WebAuthnManager>()
-    private val props = WebAuthnProperties(rpId = "localhost", rpOrigin = "http://localhost:8080", rpName = "Test")
-    private val objectConverter = mockk<ObjectConverter>().also {
-        every { it.cborConverter } returns mockk(relaxed = true)
-    }
-    private val useCase = RegisterPasskeyFinishUseCase(redisChallengeStore, credentialRepository, webAuthnManager, props, objectConverter)
+    private val credentialRepository = mockk<PasskeyCredentialRepository>(relaxed = true)
+    private val ceremonyService = mockk<WebAuthnCeremonyService>()
+    private val useCase = RegisterPasskeyFinishUseCase(credentialRepository, ceremonyService)
 
     @Test
     fun `expired challenge propagates PASSKEY_CHALLENGE_EXPIRED`() {
-        every { redisChallengeStore.getAndDeleteChallenge("session-1") } throws
+        every { ceremonyService.verifyAttestation("session-1", any(), any()) } throws
             BadRequestException("Challenge expired", ErrorCode.PASSKEY_CHALLENGE_EXPIRED)
 
         val ex = assertThrows<BadRequestException> {
@@ -46,9 +36,8 @@ class RegisterPasskeyFinishUseCaseTest {
 
     @Test
     fun `webAuthnManager validation failure throws PASSKEY_ATTESTATION_FAILED`() {
-        every { redisChallengeStore.getAndDeleteChallenge(any()) } returns ByteArray(32)
-        every { webAuthnManager.verify(any<RegistrationRequest>(), any<RegistrationParameters>()) } throws
-            RuntimeException("Attestation signature mismatch")
+        every { ceremonyService.verifyAttestation("session-2", any(), any()) } throws
+            BadRequestException("Passkey attestation failed: Attestation signature mismatch", ErrorCode.PASSKEY_ATTESTATION_FAILED)
 
         val ex = assertThrows<BadRequestException> {
             useCase.execute(RegisterPasskeyFinishUseCase.Command(
