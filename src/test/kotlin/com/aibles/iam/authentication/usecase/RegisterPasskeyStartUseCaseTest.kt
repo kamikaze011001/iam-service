@@ -1,5 +1,6 @@
 package com.aibles.iam.authentication.usecase
 
+import com.aibles.iam.authentication.infra.OtpScope
 import com.aibles.iam.authentication.infra.RedisChallengeStore
 import com.aibles.iam.authentication.infra.RedisOtpStore
 import com.aibles.iam.shared.config.WebAuthnProperties
@@ -27,7 +28,7 @@ class RegisterPasskeyStartUseCaseTest {
     fun `execute returns sessionId and options with rpId and challenge`() {
         val userId = UUID.randomUUID()
         val otpToken = UUID.randomUUID().toString()
-        every { otpStore.consumeOtpToken(otpToken) } returns userId
+        every { otpStore.consumeOtpToken(OtpScope.PASSKEY_REG, otpToken) } returns userId.toString()
 
         val challengeSlot = slot<ByteArray>()
         every { redisChallengeStore.storeChallenge(any(), capture(challengeSlot)) } just runs
@@ -45,7 +46,7 @@ class RegisterPasskeyStartUseCaseTest {
 
     @Test
     fun `throws OTP_EXPIRED when otpToken is not found in store`() {
-        every { otpStore.consumeOtpToken("bad-token") } returns null
+        every { otpStore.consumeOtpToken(OtpScope.PASSKEY_REG, "bad-token") } returns null
 
         val ex = assertThrows<BadRequestException> {
             useCase.execute(
@@ -64,7 +65,7 @@ class RegisterPasskeyStartUseCaseTest {
     fun `throws UNAUTHORIZED when otpToken belongs to a different user`() {
         val userId = UUID.randomUUID()
         val differentUserId = UUID.randomUUID()
-        every { otpStore.consumeOtpToken("valid-token") } returns differentUserId
+        every { otpStore.consumeOtpToken(OtpScope.PASSKEY_REG, "valid-token") } returns differentUserId.toString()
 
         val ex = assertThrows<UnauthorizedException> {
             useCase.execute(

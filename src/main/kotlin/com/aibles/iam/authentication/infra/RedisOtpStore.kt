@@ -3,40 +3,34 @@ package com.aibles.iam.authentication.infra
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
-import java.util.UUID
 
 @Component
 class RedisOtpStore(private val template: StringRedisTemplate) {
 
     companion object {
-        private const val OTP_PREFIX      = "otp:reg:"
-        private const val ATTEMPTS_PREFIX = "otp:reg:attempts:"
-        private const val TOKEN_PREFIX    = "otp:reg:ok:"
         private val OTP_TTL   = Duration.ofMinutes(5)
         private val TOKEN_TTL = Duration.ofMinutes(10)
-        const val MAX_ATTEMPTS = 3L
-        private const val SEND_PREFIX = "otp:reg:sends:"
-        private val SEND_TTL          = Duration.ofMinutes(10)
-        const val MAX_SEND_COUNT      = 3L
+        private val SEND_TTL  = Duration.ofMinutes(10)
+        const val MAX_ATTEMPTS   = 3L
+        const val MAX_SEND_COUNT = 3L
     }
 
-    fun saveOtp(userId: UUID, code: String) {
-        template.opsForValue().set("$OTP_PREFIX$userId", code, OTP_TTL)
-        template.delete("$ATTEMPTS_PREFIX$userId")   // reset attempts on resend
+    fun saveOtp(scope: OtpScope, key: String, code: String) {
+        template.opsForValue().set("${scope.prefix}$key", code, OTP_TTL)
+        template.delete("${scope.prefix}attempts:$key")
     }
 
-    fun getOtp(userId: UUID): String? =
-        template.opsForValue().get("$OTP_PREFIX$userId")
+    fun getOtp(scope: OtpScope, key: String): String? =
+        template.opsForValue().get("${scope.prefix}$key")
 
-    fun deleteOtp(userId: UUID) {
-        template.delete(listOf("$OTP_PREFIX$userId", "$ATTEMPTS_PREFIX$userId"))
+    fun deleteOtp(scope: OtpScope, key: String) {
+        template.delete(listOf("${scope.prefix}$key", "${scope.prefix}attempts:$key"))
     }
 
-    /** Increments and returns the new attempt count. */
-    fun incrementAttempts(userId: UUID): Long {
-        val key = "$ATTEMPTS_PREFIX$userId"
-        val count = template.opsForValue().increment(key) ?: 1L
-        if (count == 1L) template.expire(key, OTP_TTL)   // set TTL on first increment
+    fun incrementAttempts(scope: OtpScope, key: String): Long {
+        val redisKey = "${scope.prefix}attempts:$key"
+        val count = template.opsForValue().increment(redisKey) ?: 1L
+        if (count == 1L) template.expire(redisKey, OTP_TTL)
         return count
     }
 
@@ -44,19 +38,17 @@ class RedisOtpStore(private val template: StringRedisTemplate) {
 
     val maxSendCount: Long get() = MAX_SEND_COUNT
 
-    /** Increments and returns the new send count within the 10-minute window. */
-    fun incrementSendCount(userId: UUID): Long {
-        val key = "$SEND_PREFIX$userId"
-        val count = template.opsForValue().increment(key) ?: 1L
-        if (count == 1L) template.expire(key, SEND_TTL)
+    fun incrementSendCount(scope: OtpScope, key: String): Long {
+        val redisKey = "${scope.prefix}sends:$key"
+        val count = template.opsForValue().increment(redisKey) ?: 1L
+        if (count == 1L) template.expire(redisKey, SEND_TTL)
         return count
     }
 
-    fun saveOtpToken(token: String, userId: UUID) {
-        template.opsForValue().set("$TOKEN_PREFIX$token", userId.toString(), TOKEN_TTL)
+    fun saveOtpToken(scope: OtpScope, token: String, value: String) {
+        template.opsForValue().set("${scope.prefix}ok:$token", value, TOKEN_TTL)
     }
 
-    /** Returns the userId the token was issued for, or null if expired/not found. Deletes on read (one-time). */
-    fun consumeOtpToken(token: String): UUID? =
-        template.opsForValue().getAndDelete("$TOKEN_PREFIX$token")?.let { UUID.fromString(it) }
+    fun consumeOtpToken(scope: OtpScope, token: String): String? =
+        template.opsForValue().getAndDelete("${scope.prefix}ok:$token")
 }

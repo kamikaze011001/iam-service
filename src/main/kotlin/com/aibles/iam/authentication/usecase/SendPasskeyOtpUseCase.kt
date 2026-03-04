@@ -1,6 +1,7 @@
 package com.aibles.iam.authentication.usecase
 
 import com.aibles.iam.authentication.infra.EmailService
+import com.aibles.iam.authentication.infra.OtpScope
 import com.aibles.iam.authentication.infra.RedisOtpStore
 import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.shared.error.BadRequestException
@@ -28,13 +29,14 @@ class SendPasskeyOtpUseCase(
             throw BadRequestException("User has no verified email address.", ErrorCode.BAD_REQUEST)
         }
 
-        val sends = otpStore.incrementSendCount(command.userId)
+        val key = command.userId.toString()
+        val sends = otpStore.incrementSendCount(OtpScope.PASSKEY_REG, key)
         if (sends > otpStore.maxSendCount) {
             throw BadRequestException("Too many OTP requests. Please try again later.", ErrorCode.OTP_SEND_LIMIT_EXCEEDED)
         }
 
         val code = String.format("%06d", random.nextInt(1_000_000))
-        otpStore.saveOtp(command.userId, code)
+        otpStore.saveOtp(OtpScope.PASSKEY_REG, key, code)
         emailService.sendOtp(user.email, code)
     }
 }
