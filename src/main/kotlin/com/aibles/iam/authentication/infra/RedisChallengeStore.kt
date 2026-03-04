@@ -23,4 +23,11 @@ class RedisChallengeStore(private val template: StringRedisTemplate) {
             ?: throw BadRequestException("WebAuthn challenge expired or not found", ErrorCode.PASSKEY_CHALLENGE_EXPIRED)
         return Base64.getDecoder().decode(encoded)
     }
+
+    fun storeSessionData(sessionId: String, key: String, value: String) {
+        template.opsForValue().set("wc:$sessionId:$key", value, Duration.ofMinutes(5))
+    }
+
+    fun consumeSessionData(sessionId: String, key: String): String? =
+        template.opsForValue().getAndDelete("wc:$sessionId:$key")
 }

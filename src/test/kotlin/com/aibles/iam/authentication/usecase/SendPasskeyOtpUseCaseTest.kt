@@ -1,6 +1,7 @@
 package com.aibles.iam.authentication.usecase
 
 import com.aibles.iam.authentication.infra.EmailService
+import com.aibles.iam.authentication.infra.OtpScope
 import com.aibles.iam.authentication.infra.RedisOtpStore
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.usecase.GetUserUseCase
@@ -29,7 +30,7 @@ class SendPasskeyOtpUseCaseTest {
         every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns user
 
         val codeSlot = slot<String>()
-        every { otpStore.saveOtp(userId, capture(codeSlot)) } returns Unit
+        every { otpStore.saveOtp(OtpScope.PASSKEY_REG, userId.toString(), capture(codeSlot)) } returns Unit
 
         useCase.execute(SendPasskeyOtpUseCase.Command(userId))
 
@@ -49,7 +50,7 @@ class SendPasskeyOtpUseCaseTest {
             .extracting("errorCode")
             .isEqualTo(ErrorCode.BAD_REQUEST)
 
-        verify(exactly = 0) { otpStore.incrementSendCount(any()) }
+        verify(exactly = 0) { otpStore.incrementSendCount(any(), any()) }
         verify(exactly = 0) { emailService.sendOtp(any(), any()) }
     }
 
@@ -58,7 +59,7 @@ class SendPasskeyOtpUseCaseTest {
         val userId = UUID.randomUUID()
         val user = mockk<User> { every { email } returns "user@test.com" }
         every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns user
-        every { otpStore.incrementSendCount(userId) } returns RedisOtpStore.MAX_SEND_COUNT + 1
+        every { otpStore.incrementSendCount(OtpScope.PASSKEY_REG, userId.toString()) } returns RedisOtpStore.MAX_SEND_COUNT + 1
         every { otpStore.maxSendCount } returns RedisOtpStore.MAX_SEND_COUNT
 
         assertThatThrownBy { useCase.execute(SendPasskeyOtpUseCase.Command(userId)) }
@@ -66,7 +67,7 @@ class SendPasskeyOtpUseCaseTest {
             .extracting("errorCode")
             .isEqualTo(ErrorCode.OTP_SEND_LIMIT_EXCEEDED)
 
-        verify(exactly = 0) { otpStore.saveOtp(any(), any()) }
+        verify(exactly = 0) { otpStore.saveOtp(any(), any(), any()) }
         verify(exactly = 0) { emailService.sendOtp(any(), any()) }
     }
 }
