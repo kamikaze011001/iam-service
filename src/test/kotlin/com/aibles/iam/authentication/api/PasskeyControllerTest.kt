@@ -7,10 +7,14 @@ import com.aibles.iam.authentication.domain.passkey.PasskeyCredentialRepository
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.AuthenticatePasskeyStartUseCase
 import com.aibles.iam.authentication.usecase.DeletePasskeyUseCase
+import com.aibles.iam.authentication.usecase.FinishRegistrationUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyFinishUseCase
 import com.aibles.iam.authentication.usecase.RegisterPasskeyStartUseCase
 import com.aibles.iam.authentication.usecase.SendPasskeyOtpUseCase
+import com.aibles.iam.authentication.usecase.SendRegistrationOtpUseCase
+import com.aibles.iam.authentication.usecase.StartRegistrationUseCase
 import com.aibles.iam.authentication.usecase.VerifyPasskeyOtpUseCase
+import com.aibles.iam.authentication.usecase.VerifyRegistrationOtpUseCase
 import com.aibles.iam.authorization.usecase.RefreshTokenUseCase
 import com.aibles.iam.authorization.usecase.RevokeTokenUseCase
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
@@ -68,6 +72,12 @@ class PasskeyControllerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+
+    // RegisterController deps (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var sendRegistrationOtpUseCase: SendRegistrationOtpUseCase
+    @MockkBean lateinit var verifyRegistrationOtpUseCase: VerifyRegistrationOtpUseCase
+    @MockkBean lateinit var startRegistrationUseCase: StartRegistrationUseCase
+    @MockkBean lateinit var finishRegistrationUseCase: FinishRegistrationUseCase
 
     // AuditLogsController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
