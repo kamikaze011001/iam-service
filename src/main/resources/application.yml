@@ -72,7 +72,3 @@ cors:
   allowed-headers: Authorization,Content-Type
   max-age: 3600
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
-logging:
-  level:
-    root: INFO
-    com.aibles.iam: DEBUG
