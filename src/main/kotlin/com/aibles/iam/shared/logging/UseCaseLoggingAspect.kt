@@ -6,15 +6,19 @@ import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 
 @Aspect
 @Component
 class UseCaseLoggingAspect {
 
+    private val loggers = ConcurrentHashMap<Class<*>, org.slf4j.Logger>()
+
     @Around("execution(* com.aibles.iam..usecase.*.execute(..))")
     fun logUseCaseExecution(pjp: ProceedingJoinPoint): Any? {
-        val useCaseName = pjp.target.javaClass.simpleName
-        val logger = LoggerFactory.getLogger(pjp.target.javaClass)
+        val targetClass = pjp.target.javaClass
+        val logger = loggers.computeIfAbsent(targetClass) { LoggerFactory.getLogger(it) }
+        val useCaseName = targetClass.simpleName
 
         logger.debug("{} starting", useCaseName)
         val start = System.currentTimeMillis()

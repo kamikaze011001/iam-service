@@ -1,49 +1,48 @@
 package com.aibles.iam.shared.logging
 
+import com.aibles.iam.fake.usecase.FakeUseCase
+import com.aibles.iam.shared.error.BadRequestException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
-import org.springframework.stereotype.Component
+import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.junit.jupiter.SpringExtension
 
-@SpringBootTest(classes = [UseCaseLoggingAspectTest.TestConfig::class, UseCaseLoggingAspect::class])
+@ExtendWith(SpringExtension::class)
+@ContextConfiguration(classes = [UseCaseLoggingAspectTest.TestConfig::class])
 class UseCaseLoggingAspectTest {
 
     @Configuration
     @EnableAspectJAutoProxy
     class TestConfig {
-        @Bean
-        fun testUseCase() = TestUseCase()
-    }
-
-    @Component
-    class TestUseCase {
-        fun execute(command: String): String = "result-$command"
+        @Bean fun fakeUseCase() = FakeUseCase()
+        @Bean fun useCaseLoggingAspect() = UseCaseLoggingAspect()
     }
 
     @Autowired
-    lateinit var testUseCase: TestUseCase
+    lateinit var fakeUseCase: FakeUseCase
 
     @Test
-    fun `execute completes without throwing when aspect is wired`() {
-        val result = testUseCase.execute("input")
-        assert(result == "result-input")
+    fun `aspect intercepts execute and returns result`() {
+        val result = fakeUseCase.execute("hello")
+        assert(result == "result-hello")
     }
 
     @Test
-    fun `execute still throws when use case throws`() {
-        val throwingUseCase = object {
-            fun execute(): Nothing = throw RuntimeException("use case failure")
+    fun `aspect re-throws BaseException`() {
+        assertThrows<BadRequestException> {
+            fakeUseCase.executeThrowingBase()
         }
-        // Direct invocation — aspect does not intercept non-Spring-managed objects
-        // but verifies our aspect does not suppress exceptions
-        try {
-            throwingUseCase.execute()
-            assert(false) { "Expected RuntimeException" }
-        } catch (e: RuntimeException) {
-            assert(e.message == "use case failure")
+    }
+
+    @Test
+    fun `aspect re-throws unexpected RuntimeException`() {
+        assertThrows<RuntimeException> {
+            fakeUseCase.executeThrowingUnexpected()
         }
     }
 }
