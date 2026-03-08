@@ -28,21 +28,24 @@ class UseCaseLoggingAspectTest {
 
     @Test
     fun `aspect intercepts execute and returns result`() {
+        // FakeUseCase is in com.aibles.iam.fake.usecase — matches pointcut
         val result = fakeUseCase.execute("hello")
-        assert(result == "result-hello")
+        assert(result == "result-hello") { "Expected result-hello, got $result" }
     }
 
     @Test
-    fun `aspect re-throws BaseException`() {
+    fun `aspect re-throws BaseException through execute`() {
+        // "throw-base" triggers BadRequestException inside execute() — aspect DOES intercept this
         assertThrows<BadRequestException> {
-            fakeUseCase.executeThrowingBase()
+            fakeUseCase.execute("throw-base")
         }
     }
 
     @Test
-    fun `aspect re-throws unexpected RuntimeException`() {
+    fun `aspect re-throws unexpected RuntimeException through execute`() {
+        // "throw-unexpected" triggers RuntimeException inside execute() — aspect DOES intercept this
         assertThrows<RuntimeException> {
-            fakeUseCase.executeThrowingUnexpected()
+            fakeUseCase.execute("throw-unexpected")
         }
     }
 }
