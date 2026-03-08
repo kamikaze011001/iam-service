@@ -12,7 +12,6 @@ import com.aibles.iam.shared.error.ConflictException
 import com.aibles.iam.shared.error.ErrorCode
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
