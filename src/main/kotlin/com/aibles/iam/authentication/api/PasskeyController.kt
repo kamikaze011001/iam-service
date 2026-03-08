@@ -119,6 +119,14 @@ class PasskeyController(
                 displayName = request.displayName,
             )
         )
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_REGISTERED,
+            userId = userId,
+            actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+            metadata = request.displayName?.let { mapOf("displayName" to it) },
+        ))
         return ApiResponse.ok(Unit)
     }
 
@@ -140,6 +148,13 @@ class PasskeyController(
                 userHandle = request.userHandle,
             )
         )
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_AUTHENTICATED,
+            userId = result.userId,
+            actorId = result.userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+        ))
         return ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
     }
 
@@ -161,5 +176,13 @@ class PasskeyController(
     ) {
         val userId = UUID.fromString(principal.subject)
         deletePasskeyUseCase.execute(DeletePasskeyUseCase.Command(userId, id))
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_DELETED,
+            userId = userId,
+            actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+            metadata = mapOf("credentialId" to id.toString()),
+        ))
     }
 }
