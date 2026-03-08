@@ -5,6 +5,7 @@ import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -13,6 +14,7 @@ import java.util.UUID
 class DeleteUserUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     data class Command(val id: UUID)
@@ -25,6 +27,8 @@ class DeleteUserUseCase(
             eventType = AuditEvent.USER_DELETED,
             userId = command.id,
             actorId = command.id,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
     }
 }

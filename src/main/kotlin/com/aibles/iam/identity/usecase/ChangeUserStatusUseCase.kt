@@ -7,6 +7,7 @@ import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.identity.domain.user.UserStatus
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -15,6 +16,7 @@ import java.util.UUID
 class ChangeUserStatusUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     data class Command(val id: UUID, val status: UserStatus)
@@ -32,6 +34,8 @@ class ChangeUserStatusUseCase(
             eventType = AuditEvent.USER_STATUS_CHANGED,
             userId = saved.id,
             actorId = saved.id,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
             metadata = mapOf("status" to saved.status.name),
         ))
         return Result(saved)

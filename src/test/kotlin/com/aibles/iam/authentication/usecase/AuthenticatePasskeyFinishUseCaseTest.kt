@@ -68,17 +68,19 @@ class AuthenticatePasskeyFinishUseCaseTest {
         val mockAuthData = mockk<AuthenticationData>(relaxed = true)
         every { mockAuthData.authenticatorData!!.signCount } returns 6L
 
+        val activeUser = User.create("user@test.com", "Test User")
         every { credentialRepository.findByCredentialId(any()) } returns storedCredential
         every { redisChallengeStore.getAndDeleteChallenge("sess") } returns ByteArray(32)
         every { webAuthnManager.verify(any<AuthenticationRequest>(), any<AuthenticationParameters>()) } returns mockAuthData
         every { credentialRepository.save(any()) } returns storedCredential
-        every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns User.create("user@test.com", "Test User")
+        every { getUserUseCase.execute(GetUserUseCase.Query(userId)) } returns activeUser
         every { issueTokenUseCase.execute(any()) } returns IssueTokenUseCase.Result("access", "refresh", 900)
 
         val result = useCase.execute(command())
 
         assertThat(result.accessToken).isEqualTo("access")
         assertThat(result.refreshToken).isEqualTo("refresh")
+        assertThat(result.userId).isEqualTo(activeUser.id)
     }
 
     @Test

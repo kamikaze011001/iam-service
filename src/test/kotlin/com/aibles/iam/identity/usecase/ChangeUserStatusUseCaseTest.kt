@@ -7,6 +7,7 @@ import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.identity.domain.user.UserStatus
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -20,7 +21,8 @@ import java.util.UUID
 class ChangeUserStatusUseCaseTest {
     private val repo = mockk<UserRepository>()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val useCase = ChangeUserStatusUseCase(repo, eventPublisher)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
+    private val useCase = ChangeUserStatusUseCase(repo, eventPublisher, httpContextExtractor)
 
     @Test
     fun `disables an active user`() {
