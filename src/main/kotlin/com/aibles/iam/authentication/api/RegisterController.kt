@@ -76,6 +76,9 @@ class RegisterController(
         )
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.REGISTRATION_COMPLETED,
+            userId = result.userId,
+            actorId = result.userId,
+            metadata = mapOf("email" to result.email),
         ))
         return ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
     }
