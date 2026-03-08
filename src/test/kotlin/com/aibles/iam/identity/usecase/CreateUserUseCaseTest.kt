@@ -7,7 +7,6 @@ import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ConflictException
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.web.HttpContextExtractor
-import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
