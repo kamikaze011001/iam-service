@@ -13,6 +13,7 @@ import com.aibles.iam.authentication.usecase.SendRegistrationOtpUseCase
 import com.aibles.iam.authentication.usecase.StartRegistrationUseCase
 import com.aibles.iam.authentication.usecase.VerifyRegistrationOtpUseCase
 import com.aibles.iam.shared.response.ApiResponse
+import com.aibles.iam.shared.web.HttpContextExtractor
 import jakarta.validation.Valid
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
@@ -31,6 +32,7 @@ class RegisterController(
     private val startRegistrationUseCase: StartRegistrationUseCase,
     private val finishRegistrationUseCase: FinishRegistrationUseCase,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     @PostMapping("/send-otp")
@@ -40,6 +42,8 @@ class RegisterController(
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.REGISTRATION_OTP_SENT,
             metadata = mapOf("email" to request.email.lowercase().trim()),
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return ApiResponse.ok(Unit)
     }
@@ -52,6 +56,8 @@ class RegisterController(
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.REGISTRATION_OTP_VERIFIED,
             metadata = mapOf("email" to request.email.lowercase().trim()),
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return ApiResponse.ok(VerifyOtpResponse(result.otpToken))
     }
@@ -79,6 +85,8 @@ class RegisterController(
             userId = result.userId,
             actorId = result.userId,
             metadata = mapOf("email" to result.email),
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
     }

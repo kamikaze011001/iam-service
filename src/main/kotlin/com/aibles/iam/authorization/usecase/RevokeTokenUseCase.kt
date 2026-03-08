@@ -4,6 +4,7 @@ import com.aibles.iam.audit.domain.log.AuditDomainEvent
 import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authorization.domain.token.TokenStore
 import com.aibles.iam.shared.error.UnauthorizedException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component
 class RevokeTokenUseCase(
     private val tokenStore: TokenStore,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
     data class Command(val refreshToken: String)
 
@@ -22,6 +24,8 @@ class RevokeTokenUseCase(
                 eventType = AuditEvent.TOKEN_REVOKED,
                 userId = userId,
                 actorId = userId,
+                ipAddress = httpContextExtractor.clientIp(),
+                userAgent = httpContextExtractor.userAgent(),
             ))
         } catch (e: UnauthorizedException) {
             // already revoked/expired — logout is idempotent

@@ -10,6 +10,7 @@ import com.aibles.iam.shared.config.JwtProperties
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.ForbiddenException
 import com.aibles.iam.shared.error.UnauthorizedException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.nimbusds.jose.jwk.RSAKey
 import io.mockk.every
 import io.mockk.justRun
@@ -38,9 +39,10 @@ class RefreshTokenUseCaseTest {
     private val tokenStore = mockk<TokenStore>()
     private val getUserUseCase = mockk<GetUserUseCase>()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
     private val jwtService = JwtService(rsaKey, props)
     private val issueToken = IssueTokenUseCase(jwtService, tokenStore, props)
-    private val useCase = RefreshTokenUseCase(tokenStore, getUserUseCase, issueToken, eventPublisher)
+    private val useCase = RefreshTokenUseCase(tokenStore, getUserUseCase, issueToken, eventPublisher, httpContextExtractor)
 
     @Test
     fun `valid refresh token returns new token pair`() {

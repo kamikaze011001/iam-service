@@ -25,6 +25,7 @@ import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.GlobalExceptionHandler
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.justRun
@@ -75,6 +76,9 @@ class UsersControllerTest {
     // AuditLogsController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
     @MockkBean lateinit var recordAuditEventUseCase: RecordAuditEventUseCase
+
+    // Shared web components (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var httpContextExtractor: HttpContextExtractor
 
     private val testUser = User.create("test@example.com", "Test User")
 

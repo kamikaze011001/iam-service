@@ -5,6 +5,7 @@ import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authorization.domain.token.TokenStore
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.UnauthorizedException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -16,7 +17,8 @@ class RevokeTokenUseCaseTest {
 
     private val tokenStore = mockk<TokenStore>()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val useCase = RevokeTokenUseCase(tokenStore, eventPublisher)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
+    private val useCase = RevokeTokenUseCase(tokenStore, eventPublisher, httpContextExtractor)
 
     @Test
     fun `valid token is consumed from store`() {
