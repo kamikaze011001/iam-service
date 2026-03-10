@@ -3,20 +3,25 @@ package com.aibles.iam.identity.api
 import com.aibles.iam.identity.api.dto.ChangeStatusRequest
 import com.aibles.iam.identity.api.dto.CreateUserRequest
 import com.aibles.iam.identity.api.dto.UpdateUserRequest
+import com.aibles.iam.identity.api.dto.UpdateUserRolesRequest
 import com.aibles.iam.identity.api.dto.UserResponse
 import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.identity.usecase.DeleteUserUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
+import com.aibles.iam.identity.usecase.UpdateUserRolesUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -32,6 +37,7 @@ class UsersController(
     private val updateUserUseCase: UpdateUserUseCase,
     private val changeUserStatusUseCase: ChangeUserStatusUseCase,
     private val deleteUserUseCase: DeleteUserUseCase,
+    private val updateUserRolesUseCase: UpdateUserRolesUseCase,
 ) {
 
     @GetMapping("/{id}")
@@ -71,5 +77,22 @@ class UsersController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable id: UUID) {
         deleteUserUseCase.execute(DeleteUserUseCase.Command(id))
+    }
+
+    @PutMapping("/{id}/roles")
+    fun updateUserRoles(
+        @PathVariable id: UUID,
+        @AuthenticationPrincipal principal: Jwt,
+        @Valid @RequestBody request: UpdateUserRolesRequest,
+    ): ApiResponse<UserResponse> {
+        val actorId = UUID.fromString(principal.subject)
+        val result = updateUserRolesUseCase.execute(
+            UpdateUserRolesUseCase.Command(
+                actorId = actorId,
+                targetUserId = id,
+                roles = request.roles,
+            )
+        )
+        return ApiResponse.ok(UserResponse.from(result.user))
     }
 }

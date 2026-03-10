@@ -21,6 +21,7 @@ import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.identity.usecase.DeleteUserUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
+import com.aibles.iam.identity.usecase.UpdateUserRolesUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.GlobalExceptionHandler
@@ -29,16 +30,22 @@ import com.aibles.iam.shared.web.HttpContextExtractor
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.justRun
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
+import org.springframework.test.web.servlet.put
 import java.util.UUID
 
 @WebMvcTest
@@ -52,6 +59,7 @@ class UsersControllerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+    @MockkBean lateinit var updateUserRolesUseCase: UpdateUserRolesUseCase
 
     // AuthController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
@@ -81,6 +89,23 @@ class UsersControllerTest {
     @MockkBean lateinit var httpContextExtractor: HttpContextExtractor
 
     private val testUser = User.create("test@example.com", "Test User")
+    private val adminId: UUID = UUID.randomUUID()
+
+    @BeforeEach
+    fun setUpSecurityContext() {
+        val jwt = Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .subject(adminId.toString())
+            .build()
+        val context = SecurityContextHolder.createEmptyContext()
+        context.authentication = JwtAuthenticationToken(jwt)
+        SecurityContextHolder.setContext(context)
+    }
+
+    @AfterEach
+    fun clearSecurityContext() {
+        SecurityContextHolder.clearContext()
+    }
 
     @Test
     fun `GET users-{id} returns user response`() {
@@ -128,5 +153,26 @@ class UsersControllerTest {
 
         mockMvc.delete("/api/v1/users/${testUser.id}")
             .andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    fun `PUT users-{id}-roles updates roles and returns user`() {
+        every {
+            updateUserRolesUseCase.execute(
+                UpdateUserRolesUseCase.Command(
+                    actorId = adminId,
+                    targetUserId = testUser.id,
+                    roles = setOf("USER", "ADMIN"),
+                )
+            )
+        } returns UpdateUserRolesUseCase.Result(testUser)
+
+        mockMvc.put("/api/v1/users/${testUser.id}/roles") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"roles":["USER","ADMIN"]}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.success") { value(true) }
+        }
     }
 }
