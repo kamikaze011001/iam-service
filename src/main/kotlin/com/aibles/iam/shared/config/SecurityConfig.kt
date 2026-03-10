@@ -2,6 +2,8 @@ package com.aibles.iam.shared.config
 
 import com.aibles.iam.authentication.infra.GoogleOAuth2FailureHandler
 import com.aibles.iam.authentication.infra.GoogleOAuth2SuccessHandler
+import com.aibles.iam.shared.security.ApiAccessDeniedHandler
+import com.aibles.iam.shared.security.ApiAuthEntryPoint
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,6 +31,8 @@ class SecurityConfig(
     private val googleOAuth2FailureHandler: GoogleOAuth2FailureHandler,
     private val jwtDecoder: JwtDecoder,
     private val corsProperties: CorsProperties,
+    private val apiAuthEntryPoint: ApiAuthEntryPoint,
+    private val apiAccessDeniedHandler: ApiAccessDeniedHandler,
 ) {
 
     @Bean
@@ -68,6 +72,10 @@ class SecurityConfig(
                         }
                     )
                 }
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint(apiAuthEntryPoint)
+                it.accessDeniedHandler(apiAccessDeniedHandler)
             }
         return http.build()
     }

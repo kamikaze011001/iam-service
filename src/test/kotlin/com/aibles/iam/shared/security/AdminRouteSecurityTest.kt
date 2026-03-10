@@ -26,6 +26,8 @@ import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.config.SecurityConfig
 import com.aibles.iam.shared.error.GlobalExceptionHandler
+import com.aibles.iam.shared.security.ApiAccessDeniedHandler
+import com.aibles.iam.shared.security.ApiAuthEntryPoint
 import com.aibles.iam.shared.pagination.PageResponse
 import com.aibles.iam.shared.web.HttpContextExtractor
 import com.ninjasquad.springmockk.MockkBean
@@ -44,7 +46,8 @@ import org.springframework.test.web.servlet.get
 import java.util.UUID
 
 @WebMvcTest
-@Import(SecurityConfig::class, GlobalExceptionHandler::class)
+@Import(SecurityConfig::class, GlobalExceptionHandler::class,
+        ApiAuthEntryPoint::class, ApiAccessDeniedHandler::class)
 @TestPropertySource(properties = [
     "cors.allowed-origins=http://localhost:3000",
     "cors.allowed-methods=GET,POST,PUT,PATCH,DELETE,OPTIONS",
@@ -133,5 +136,26 @@ class AdminRouteSecurityTest {
         mockMvc.get("/api/v1/audit-logs") {
             with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
         }.andExpect { status { isOk() } }
+    }
+
+    @Test
+    fun `unauthenticated request returns ApiResponse body with UNAUTHORIZED code`() {
+        mockMvc.get("/api/v1/users/${UUID.randomUUID()}") {
+        }.andExpect {
+            status { isUnauthorized() }
+            jsonPath("$.success") { value(false) }
+            jsonPath("$.error.code") { value("UNAUTHORIZED") }
+        }
+    }
+
+    @Test
+    fun `ROLE_USER on admin route returns ApiResponse body with FORBIDDEN code`() {
+        mockMvc.get("/api/v1/users/${UUID.randomUUID()}") {
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_USER")))
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.success") { value(false) }
+            jsonPath("$.error.code") { value("FORBIDDEN") }
+        }
     }
 }
