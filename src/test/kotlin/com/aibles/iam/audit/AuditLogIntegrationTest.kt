@@ -7,6 +7,7 @@ import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -25,14 +26,14 @@ class AuditLogIntegrationTest : BaseIntegrationTest() {
 
         // Create a user — this should trigger a USER_CREATED audit event
         mockMvc.post("/api/v1/users") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = body
         }.andExpect { status { isCreated() } }
 
         // Query audit logs for USER_CREATED events
         mockMvc.get("/api/v1/audit-logs") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             param("eventType", "USER_CREATED")
         }.andExpect {
             status { isOk() }
@@ -45,7 +46,7 @@ class AuditLogIntegrationTest : BaseIntegrationTest() {
     @Test
     fun `audit-logs endpoint returns empty page when no events match filter`() {
         mockMvc.get("/api/v1/audit-logs") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             param("eventType", "TOKEN_REVOKED")
         }.andExpect {
             status { isOk() }
