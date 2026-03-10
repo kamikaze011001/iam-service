@@ -67,5 +67,10 @@ class User private constructor(
         updatedAt = Instant.now()
     }
 
+    fun grantRole(role: String) {
+        roles.add(role)
+        updatedAt = Instant.now()
+    }
+
     fun isActive() = status == UserStatus.ACTIVE
 }
