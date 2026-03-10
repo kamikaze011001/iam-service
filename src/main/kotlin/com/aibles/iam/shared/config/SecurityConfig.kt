@@ -52,6 +52,7 @@ class SecurityConfig(
                         "/actuator/health", "/actuator/info",
                         "/swagger-ui/**", "/v3/api-docs/**",
                     ).permitAll()
+                    .requestMatchers("/api/v1/users/**", "/api/v1/audit-logs/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
             .oauth2Login {
