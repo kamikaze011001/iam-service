@@ -24,7 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // enables @PreAuthorize on use cases or controllers when needed
 @EnableConfigurationProperties(CorsProperties::class)
 class SecurityConfig(
     private val googleOAuth2SuccessHandler: GoogleOAuth2SuccessHandler,

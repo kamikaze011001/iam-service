@@ -158,4 +158,13 @@ class AdminRouteSecurityTest {
             jsonPath("$.error.code") { value("FORBIDDEN") }
         }
     }
+
+    @Test
+    fun `JWT with empty roles on admin route receives 403`() {
+        mockMvc.get("/api/v1/users/${UUID.randomUUID()}") {
+            with(jwt().authorities())  // no authorities = no ROLE_ADMIN
+        }.andExpect {
+            status { isForbidden() }
+        }
+    }
 }
