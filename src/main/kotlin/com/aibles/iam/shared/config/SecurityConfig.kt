@@ -62,8 +62,8 @@ class SecurityConfig(
                 it.jwt { jwt ->
                     jwt.decoder(jwtDecoder)
                     jwt.jwtAuthenticationConverter(
-                        JwtAuthenticationConverter().also { c ->
-                            c.setJwtGrantedAuthoritiesConverter(buildRolesConverter())
+                        JwtAuthenticationConverter().apply {
+                            setJwtGrantedAuthoritiesConverter(buildRolesConverter())
                         }
                     )
                 }
