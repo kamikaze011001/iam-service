@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
@@ -26,7 +27,7 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
         // CREATE
         val createBody = objectMapper.writeValueAsString(CreateUserRequest("inttest@example.com", "Test User"))
         val createResult = mockMvc.post("/api/v1/users") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = createBody
         }.andExpect {
@@ -42,7 +43,7 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
 
         // READ
         mockMvc.get("/api/v1/users/$userId") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
         }.andExpect {
             status { isOk() }
             jsonPath("$.data.email") { value("inttest@example.com") }
@@ -51,7 +52,7 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
         // UPDATE
         val updateBody = objectMapper.writeValueAsString(UpdateUserRequest("Updated Name"))
         mockMvc.patch("/api/v1/users/$userId") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = updateBody
         }.andExpect {
@@ -62,7 +63,7 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
         // CHANGE STATUS
         val statusBody = objectMapper.writeValueAsString(ChangeStatusRequest(UserStatus.DISABLED))
         mockMvc.patch("/api/v1/users/$userId/status") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = statusBody
         }.andExpect {
@@ -72,14 +73,14 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
 
         // DELETE
         mockMvc.delete("/api/v1/users/$userId") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
         }.andExpect {
             status { isNoContent() }
         }
 
         // VERIFY DELETED
         mockMvc.get("/api/v1/users/$userId") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
         }.andExpect {
             status { isNotFound() }
         }
@@ -89,13 +90,13 @@ class UserCrudIntegrationTest : BaseIntegrationTest() {
     fun `create user with duplicate email returns 409`() {
         val body = objectMapper.writeValueAsString(CreateUserRequest("duplicate@example.com", null))
         mockMvc.post("/api/v1/users") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = body
         }.andExpect { status { isCreated() } }
 
         mockMvc.post("/api/v1/users") {
-            with(jwt())
+            with(jwt().authorities(SimpleGrantedAuthority("ROLE_ADMIN")))
             contentType = MediaType.APPLICATION_JSON
             content = body
         }.andExpect {
