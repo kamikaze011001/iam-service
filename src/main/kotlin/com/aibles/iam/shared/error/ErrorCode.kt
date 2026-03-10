@@ -13,6 +13,7 @@ enum class ErrorCode(val httpStatus: HttpStatus) {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND),
     USER_EMAIL_CONFLICT(HttpStatus.CONFLICT),
     USER_DISABLED(HttpStatus.FORBIDDEN),
+    INVALID_ROLE(HttpStatus.BAD_REQUEST),
     GOOGLE_TOKEN_INVALID(HttpStatus.UNAUTHORIZED),
     PASSKEY_NOT_FOUND(HttpStatus.NOT_FOUND),
     PASSKEY_COUNTER_INVALID(HttpStatus.UNAUTHORIZED),
