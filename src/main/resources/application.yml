@@ -72,3 +72,6 @@ cors:
   allowed-headers: Authorization,Content-Type
   max-age: 3600
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+app:
+  bootstrap:
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}

@@ -21,6 +21,7 @@ import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.identity.usecase.DeleteUserUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
+import com.aibles.iam.identity.usecase.UpdateUserRolesUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.error.GlobalExceptionHandler
 import com.aibles.iam.shared.pagination.PageResponse
@@ -54,6 +55,7 @@ class AuditLogsControllerTest {
     @MockkBean lateinit var updateUserUseCase: UpdateUserUseCase
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
+    @MockkBean lateinit var updateUserRolesUseCase: UpdateUserRolesUseCase
 
     // AuthController deps
     @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
