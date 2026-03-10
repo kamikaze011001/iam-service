@@ -8,6 +8,7 @@ import com.aibles.iam.authorization.usecase.IssueTokenUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.shared.error.BadRequestException
 import com.aibles.iam.shared.error.ErrorCode
+import java.util.UUID
 import org.springframework.stereotype.Component
 
 @Component
@@ -24,7 +25,13 @@ class FinishRegistrationUseCase(
         val attestationObject: String,
         val displayName: String?,
     )
-    data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long)
+    data class Result(
+        val accessToken: String,
+        val refreshToken: String,
+        val expiresIn: Long,
+        val userId: UUID,
+        val email: String,
+    )
 
     fun execute(command: Command): Result {
         // Retrieve the email stored during the start step
@@ -55,6 +62,12 @@ class FinishRegistrationUseCase(
 
         // Issue tokens
         val tokens = issueTokenUseCase.execute(IssueTokenUseCase.Command(userResult.user))
-        return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
+        return Result(
+            accessToken = tokens.accessToken,
+            refreshToken = tokens.refreshToken,
+            expiresIn = tokens.expiresIn,
+            userId = userResult.user.id,
+            email = email,
+        )
     }
 }

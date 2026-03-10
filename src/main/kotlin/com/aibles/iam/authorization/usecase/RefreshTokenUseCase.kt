@@ -6,6 +6,7 @@ import com.aibles.iam.authorization.domain.token.TokenStore
 import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.ForbiddenException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 
@@ -15,6 +16,7 @@ class RefreshTokenUseCase(
     private val getUserUseCase: GetUserUseCase,
     private val issueTokenUseCase: IssueTokenUseCase,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
     data class Command(val refreshToken: String)
     data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long)
@@ -29,6 +31,8 @@ class RefreshTokenUseCase(
             eventType = AuditEvent.TOKEN_REFRESHED,
             userId = userId,
             actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
     }

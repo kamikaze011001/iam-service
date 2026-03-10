@@ -6,6 +6,7 @@ import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ConflictException
 import com.aibles.iam.shared.error.ErrorCode
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component
 class CreateUserUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     data class Command(val email: String, val displayName: String?, val googleSub: String?)
@@ -27,6 +29,8 @@ class CreateUserUseCase(
             eventType = AuditEvent.USER_CREATED,
             userId = saved.id,
             actorId = saved.id,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
             metadata = mapOf("email" to saved.email),
         ))
         return Result(saved)

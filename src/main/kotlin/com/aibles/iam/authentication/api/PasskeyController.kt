@@ -19,6 +19,7 @@ import com.aibles.iam.authentication.usecase.SendPasskeyOtpUseCase
 import com.aibles.iam.authentication.usecase.VerifyPasskeyOtpUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
+import com.aibles.iam.shared.web.HttpContextExtractor
 import jakarta.validation.Valid
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
@@ -48,6 +49,7 @@ class PasskeyController(
     private val sendPasskeyOtpUseCase: SendPasskeyOtpUseCase,
     private val verifyPasskeyOtpUseCase: VerifyPasskeyOtpUseCase,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     @PostMapping("/register/send-otp")
@@ -59,6 +61,8 @@ class PasskeyController(
             eventType = AuditEvent.PASSKEY_OTP_SENT,
             userId = userId,
             actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return ApiResponse.ok(Unit)
     }
@@ -76,6 +80,8 @@ class PasskeyController(
             eventType = AuditEvent.PASSKEY_OTP_VERIFIED,
             userId = userId,
             actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
         return ApiResponse.ok(VerifyOtpResponse(result.otpToken))
     }
@@ -113,6 +119,14 @@ class PasskeyController(
                 displayName = request.displayName,
             )
         )
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_REGISTERED,
+            userId = userId,
+            actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+            metadata = request.displayName?.let { mapOf("displayName" to it) },
+        ))
         return ApiResponse.ok(Unit)
     }
 
@@ -134,6 +148,13 @@ class PasskeyController(
                 userHandle = request.userHandle,
             )
         )
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_AUTHENTICATED,
+            userId = result.userId,
+            actorId = result.userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+        ))
         return ApiResponse.ok(TokenResponse(result.accessToken, result.refreshToken, result.expiresIn))
     }
 
@@ -155,5 +176,13 @@ class PasskeyController(
     ) {
         val userId = UUID.fromString(principal.subject)
         deletePasskeyUseCase.execute(DeletePasskeyUseCase.Command(userId, id))
+        eventPublisher.publishEvent(AuditDomainEvent(
+            eventType = AuditEvent.PASSKEY_DELETED,
+            userId = userId,
+            actorId = userId,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
+            metadata = mapOf("credentialId" to id.toString()),
+        ))
     }
 }

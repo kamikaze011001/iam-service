@@ -4,6 +4,7 @@ import com.aibles.iam.authentication.usecase.LoginWithGoogleUseCase
 import com.aibles.iam.authentication.usecase.SyncGoogleUserUseCase
 import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.shared.config.CorsProperties
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.mockk.every
@@ -24,6 +25,7 @@ class GoogleOAuth2SuccessHandlerTest {
     private val objectMapper = ObjectMapper().registerKotlinModule()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
     private val corsProperties = CorsProperties(frontendUrl = "http://localhost:3000")
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
 
     private val handler = GoogleOAuth2SuccessHandler(
         syncGoogleUserUseCase = syncUseCase,
@@ -31,6 +33,7 @@ class GoogleOAuth2SuccessHandlerTest {
         objectMapper = objectMapper,
         eventPublisher = eventPublisher,
         corsProperties = corsProperties,
+        httpContextExtractor = httpContextExtractor,
     )
 
     @Test

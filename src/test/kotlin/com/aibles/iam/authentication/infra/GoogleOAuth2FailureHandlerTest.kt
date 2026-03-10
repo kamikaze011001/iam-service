@@ -2,9 +2,11 @@ package com.aibles.iam.authentication.infra
 
 import com.aibles.iam.audit.domain.log.AuditDomainEvent
 import com.aibles.iam.audit.domain.log.AuditEvent
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -19,14 +21,15 @@ class GoogleOAuth2FailureHandlerTest {
 
     private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val handler = GoogleOAuth2FailureHandler(objectMapper, eventPublisher)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
+    private val handler = GoogleOAuth2FailureHandler(objectMapper, eventPublisher, httpContextExtractor)
 
     @Test
     fun `onAuthenticationFailure publishes LOGIN_GOOGLE_FAILURE and returns 401`() {
-        val request = MockHttpServletRequest().apply {
-            remoteAddr = "10.0.0.1"
-            addHeader("User-Agent", "TestBrowser")
-        }
+        every { httpContextExtractor.clientIp() } returns "10.0.0.1"
+        every { httpContextExtractor.userAgent() } returns "TestBrowser"
+
+        val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val exception = BadCredentialsException("Invalid token")
 
@@ -48,6 +51,9 @@ class GoogleOAuth2FailureHandlerTest {
 
     @Test
     fun `onAuthenticationFailure handles null user-agent`() {
+        every { httpContextExtractor.clientIp() } returns null
+        every { httpContextExtractor.userAgent() } returns null
+
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
         val exception = BadCredentialsException("Denied")

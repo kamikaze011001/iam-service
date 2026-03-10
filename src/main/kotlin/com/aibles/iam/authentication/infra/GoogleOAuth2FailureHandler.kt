@@ -3,6 +3,7 @@ package com.aibles.iam.authentication.infra
 import com.aibles.iam.audit.domain.log.AuditDomainEvent
 import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.shared.response.ApiResponse
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component
 class GoogleOAuth2FailureHandler(
     private val objectMapper: ObjectMapper,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) : AuthenticationFailureHandler {
 
     private val logger = LoggerFactory.getLogger(GoogleOAuth2FailureHandler::class.java)
@@ -30,8 +32,8 @@ class GoogleOAuth2FailureHandler(
 
         eventPublisher.publishEvent(AuditDomainEvent(
             eventType = AuditEvent.LOGIN_GOOGLE_FAILURE,
-            ipAddress = request.remoteAddr,
-            userAgent = request.getHeader("User-Agent"),
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
             metadata = mapOf("error" to exception.message),
         ))
 

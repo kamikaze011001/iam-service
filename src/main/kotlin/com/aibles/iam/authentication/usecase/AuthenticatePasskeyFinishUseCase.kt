@@ -26,6 +26,7 @@ import com.webauthn4j.verifier.exception.MaliciousCounterValueException
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.Base64
+import java.util.UUID
 
 @Component
 class AuthenticatePasskeyFinishUseCase(
@@ -46,7 +47,7 @@ class AuthenticatePasskeyFinishUseCase(
         val signature: String,          // base64url
         val userHandle: String?,        // base64url, optional
     )
-    data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long)
+    data class Result(val accessToken: String, val refreshToken: String, val expiresIn: Long, val userId: UUID)
 
     fun execute(command: Command): Result {
         val decoder = Base64.getUrlDecoder()
@@ -115,7 +116,7 @@ class AuthenticatePasskeyFinishUseCase(
 
         // Step 8: issue tokens
         val tokens = issueTokenUseCase.execute(IssueTokenUseCase.Command(user))
-        return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
+        return Result(tokens.accessToken, tokens.refreshToken, tokens.expiresIn, user.id)
     }
 
     private fun String.padBase64Url(): String {

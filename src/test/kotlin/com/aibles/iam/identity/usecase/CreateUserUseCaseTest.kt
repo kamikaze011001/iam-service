@@ -6,7 +6,7 @@ import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ConflictException
 import com.aibles.iam.shared.error.ErrorCode
-import com.ninjasquad.springmockk.MockkBean
+import com.aibles.iam.shared.web.HttpContextExtractor
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -18,7 +18,8 @@ import org.springframework.context.ApplicationEventPublisher
 class CreateUserUseCaseTest {
     private val repo = mockk<UserRepository>()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val useCase = CreateUserUseCase(repo, eventPublisher)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
+    private val useCase = CreateUserUseCase(repo, eventPublisher, httpContextExtractor)
 
     @Test
     fun `creates and saves user`() {
