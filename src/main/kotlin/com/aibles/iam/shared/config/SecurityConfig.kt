@@ -6,9 +6,15 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.core.convert.converter.Converter
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -16,6 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @EnableConfigurationProperties(CorsProperties::class)
 class SecurityConfig(
     private val googleOAuth2SuccessHandler: GoogleOAuth2SuccessHandler,
@@ -51,7 +58,16 @@ class SecurityConfig(
                 it.successHandler(googleOAuth2SuccessHandler)
                 it.failureHandler(googleOAuth2FailureHandler)
             }
-            .oauth2ResourceServer { it.jwt { jwt -> jwt.decoder(jwtDecoder) } }
+            .oauth2ResourceServer {
+                it.jwt { jwt ->
+                    jwt.decoder(jwtDecoder)
+                    jwt.jwtAuthenticationConverter(
+                        JwtAuthenticationConverter().also { c ->
+                            c.setJwtGrantedAuthoritiesConverter(buildRolesConverter())
+                        }
+                    )
+                }
+            }
         return http.build()
     }
 
@@ -66,5 +82,12 @@ class SecurityConfig(
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", config)
         return source
+    }
+
+    companion object {
+        fun buildRolesConverter(): Converter<Jwt, Collection<GrantedAuthority>> = Converter { jwt ->
+            (jwt.getClaimAsStringList("roles") ?: emptyList())
+                .map { SimpleGrantedAuthority("ROLE_$it") }
+        }
     }
 }
