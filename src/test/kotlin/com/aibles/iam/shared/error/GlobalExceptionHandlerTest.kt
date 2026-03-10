@@ -22,6 +22,7 @@ import com.aibles.iam.identity.usecase.DeleteUserUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import org.junit.jupiter.api.Test
@@ -76,6 +77,9 @@ class GlobalExceptionHandlerTest {
     // AuditLogsController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
     @MockkBean lateinit var recordAuditEventUseCase: RecordAuditEventUseCase
+
+    // Shared web components (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var httpContextExtractor: HttpContextExtractor
 
     @RestController
     class TestController {

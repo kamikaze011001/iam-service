@@ -24,6 +24,7 @@ import com.aibles.iam.identity.usecase.GetUserUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.error.GlobalExceptionHandler
 import com.aibles.iam.shared.pagination.PageResponse
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import org.junit.jupiter.api.Test
@@ -73,6 +74,9 @@ class AuditLogsControllerTest {
     @MockkBean lateinit var verifyRegistrationOtpUseCase: VerifyRegistrationOtpUseCase
     @MockkBean lateinit var startRegistrationUseCase: StartRegistrationUseCase
     @MockkBean lateinit var finishRegistrationUseCase: FinishRegistrationUseCase
+
+    // Shared web components (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var httpContextExtractor: HttpContextExtractor
 
     @Test
     fun `GET audit-logs returns paginated response`() {

@@ -5,6 +5,7 @@ import com.aibles.iam.audit.domain.log.AuditEvent
 import com.aibles.iam.authentication.usecase.LoginWithGoogleUseCase
 import com.aibles.iam.authentication.usecase.SyncGoogleUserUseCase
 import com.aibles.iam.shared.config.CorsProperties
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -24,6 +25,7 @@ class GoogleOAuth2SuccessHandler(
     private val objectMapper: ObjectMapper,
     private val eventPublisher: ApplicationEventPublisher,
     private val corsProperties: CorsProperties,
+    private val httpContextExtractor: HttpContextExtractor,
     private val requestCache: HttpSessionRequestCache = HttpSessionRequestCache(),
     private val savedRequestHandler: SavedRequestAwareAuthenticationSuccessHandler =
         SavedRequestAwareAuthenticationSuccessHandler(),
@@ -51,6 +53,8 @@ class GoogleOAuth2SuccessHandler(
                 userId = result.user.id,
                 actorId = result.user.id,
                 metadata = mapOf("email" to result.user.email),
+                ipAddress = httpContextExtractor.clientIp(),
+                userAgent = httpContextExtractor.userAgent(),
             ))
             savedRequestHandler.onAuthenticationSuccess(request, response, authentication)
             return
@@ -63,6 +67,8 @@ class GoogleOAuth2SuccessHandler(
             userId = result.user.id,
             actorId = result.user.id,
             metadata = mapOf("email" to result.user.email),
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
         ))
 
         response.status = HttpServletResponse.SC_OK

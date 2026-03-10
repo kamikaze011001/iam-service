@@ -6,6 +6,7 @@ import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
@@ -20,7 +21,8 @@ import java.util.UUID
 class DeleteUserUseCaseTest {
     private val repo = mockk<UserRepository>()
     private val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val useCase = DeleteUserUseCase(repo, eventPublisher)
+    private val httpContextExtractor = mockk<HttpContextExtractor>(relaxed = true)
+    private val useCase = DeleteUserUseCase(repo, eventPublisher, httpContextExtractor)
 
     @Test
     fun `deletes existing user`() {

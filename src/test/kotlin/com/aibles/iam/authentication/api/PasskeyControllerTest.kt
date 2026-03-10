@@ -25,6 +25,7 @@ import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.GlobalExceptionHandler
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.justRun
@@ -83,6 +84,9 @@ class PasskeyControllerTest {
     @MockkBean lateinit var queryAuditLogsUseCase: QueryAuditLogsUseCase
     @MockkBean lateinit var recordAuditEventUseCase: RecordAuditEventUseCase
 
+    // Shared web components (scanned by @WebMvcTest — must be mocked)
+    @MockkBean lateinit var httpContextExtractor: HttpContextExtractor
+
     private val userId = UUID.randomUUID()
 
     @BeforeEach
@@ -94,6 +98,7 @@ class PasskeyControllerTest {
         val context = SecurityContextHolder.createEmptyContext()
         context.authentication = JwtAuthenticationToken(jwt)
         SecurityContextHolder.setContext(context)
+        justRun { recordAuditEventUseCase.onAuditEvent(any()) }
     }
 
     @AfterEach
@@ -126,6 +131,8 @@ class PasskeyControllerTest {
     @Test
     fun `POST register-finish returns 200`() {
         justRun { registerPasskeyFinishUseCase.execute(any()) }
+        every { httpContextExtractor.clientIp() } returns "127.0.0.1"
+        every { httpContextExtractor.userAgent() } returns "test-agent"
 
         mockMvc.post("/api/v1/auth/passkey/register/finish") {
             contentType = MediaType.APPLICATION_JSON
@@ -152,7 +159,9 @@ class PasskeyControllerTest {
     @Test
     fun `POST authenticate-finish returns 200 with token pair`() {
         every { authenticatePasskeyFinishUseCase.execute(any()) } returns
-            AuthenticatePasskeyFinishUseCase.Result("access-tok", "refresh-tok", 900)
+            AuthenticatePasskeyFinishUseCase.Result("access-tok", "refresh-tok", 900, userId)
+        every { httpContextExtractor.clientIp() } returns "127.0.0.1"
+        every { httpContextExtractor.userAgent() } returns "test-agent"
 
         mockMvc.post("/api/v1/auth/passkey/authenticate/finish") {
             contentType = MediaType.APPLICATION_JSON

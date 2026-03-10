@@ -6,6 +6,7 @@ import com.aibles.iam.identity.domain.user.User
 import com.aibles.iam.identity.domain.user.UserRepository
 import com.aibles.iam.shared.error.ErrorCode
 import com.aibles.iam.shared.error.NotFoundException
+import com.aibles.iam.shared.web.HttpContextExtractor
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -14,6 +15,7 @@ import java.util.UUID
 class UpdateUserUseCase(
     private val userRepository: UserRepository,
     private val eventPublisher: ApplicationEventPublisher,
+    private val httpContextExtractor: HttpContextExtractor,
 ) {
 
     data class Command(val id: UUID, val displayName: String)
@@ -28,6 +30,8 @@ class UpdateUserUseCase(
             eventType = AuditEvent.USER_UPDATED,
             userId = saved.id,
             actorId = saved.id,
+            ipAddress = httpContextExtractor.clientIp(),
+            userAgent = httpContextExtractor.userAgent(),
             metadata = mapOf("displayName" to saved.displayName),
         ))
         return Result(saved)
