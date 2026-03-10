@@ -20,6 +20,7 @@ import com.aibles.iam.identity.usecase.ChangeUserStatusUseCase
 import com.aibles.iam.identity.usecase.CreateUserUseCase
 import com.aibles.iam.identity.usecase.DeleteUserUseCase
 import com.aibles.iam.identity.usecase.GetUserUseCase
+import com.aibles.iam.identity.usecase.UpdateUserRolesUseCase
 import com.aibles.iam.identity.usecase.UpdateUserUseCase
 import com.aibles.iam.shared.response.ApiResponse
 import com.aibles.iam.shared.web.HttpContextExtractor
@@ -53,6 +54,7 @@ class GlobalExceptionHandlerTest {
     @MockkBean lateinit var changeUserStatusUseCase: ChangeUserStatusUseCase
     @MockkBean lateinit var deleteUserUseCase: DeleteUserUseCase
     @MockkBean lateinit var createUserUseCase: CreateUserUseCase
+    @MockkBean lateinit var updateUserRolesUseCase: UpdateUserRolesUseCase
 
     // AuthController deps (scanned by @WebMvcTest — must be mocked)
     @MockkBean lateinit var refreshTokenUseCase: RefreshTokenUseCase
